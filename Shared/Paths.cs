@@ -3,8 +3,8 @@ namespace Shared
 {
     public class Paths
     {
-        public static string FOLDER = @"/Users/ole/Data/seData/medium1";
+        public static string FOLDER = @"/Users/oleeriksen/Data/seData/medium";
 
-        public static string DATABASE = @"/Users/ole/Data/searchDBmedium1.db";
+        public static string DATABASE = @"/Users/oleeriksen/Data/searchDBmedium.db";
     }
 }

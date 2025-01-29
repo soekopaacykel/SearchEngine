@@ -6,10 +6,10 @@ using Microsoft.Data.Sqlite;
 
 namespace Indexer
 {
-    public class Database : IDatabase
+    public class DatabaseSqlite : IDatabase
     {
         private SqliteConnection _connection;
-        public Database()
+        public DatabaseSqlite()
         {
 
             var connectionStringBuilder = new SqliteConnectionStringBuilder();

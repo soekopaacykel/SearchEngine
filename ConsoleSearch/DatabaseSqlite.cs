@@ -6,13 +6,13 @@ using Microsoft.Data.Sqlite;
 
 namespace ConsoleSearch
 {
-    public class Database : IDatabase
+    public class DatabaseSqlite : IDatabase
     {
         private SqliteConnection _connection;
 
         private Dictionary<string, int> mWords = null;
 
-        public Database()
+        public DatabaseSqlite()
         {
             var connectionStringBuilder = new SqliteConnectionStringBuilder();
 

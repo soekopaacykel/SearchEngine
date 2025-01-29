@@ -11,7 +11,7 @@ namespace ConsoleSearch
 
         public void Run()
         {
-            SearchLogic mSearchLogic = new SearchLogic(new Database());
+            SearchLogic mSearchLogic = new SearchLogic(new DatabaseSqlite());
             
 
             Console.WriteLine("Console Search");

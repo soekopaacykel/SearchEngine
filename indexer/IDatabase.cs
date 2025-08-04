@@ -8,8 +8,8 @@ namespace Indexer
         //Get all words with key as the value, and the value as the id 
         Dictionary<string, int> GetAllWords();
 
-        // Return the number of documents
-        int GetDocumentCounts();
+        // Return the number of documents indexed in the database
+        int DocumentCounts { get; }
 
         void InsertDocument(BEDocument doc);
 

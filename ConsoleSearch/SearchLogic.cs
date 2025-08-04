@@ -8,8 +8,6 @@ namespace ConsoleSearch
     {
         IDatabase mDatabase;
 
-        Dictionary<string, int> mWords;
-
         public SearchLogic(IDatabase database)
         {
             mDatabase = database;

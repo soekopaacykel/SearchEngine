@@ -8,10 +8,10 @@ namespace Indexer
     public class App
     {
         public void Run(){
-            DatabaseSqlite db = new DatabaseSqlite();
+            DatabaseSqlite db = new DatabaseSqlite(Paths.DATABASE);
             Crawler crawler = new Crawler(db);
 
-            var root = new DirectoryInfo(Paths.FOLDER);
+            var root = new DirectoryInfo(Config.FOLDER);
 
             DateTime start = DateTime.Now;
 
@@ -22,7 +22,7 @@ namespace Indexer
 
             var all = db.GetAllWords();
 
-            Console.WriteLine($"Indexed {db.GetDocumentCounts()} documents");
+            Console.WriteLine($"Indexed {db.DocumentCounts} documents");
             Console.WriteLine($"Number of different words: {all.Count}");
             int count = 10;
             Console.WriteLine($"The first {count} is:");

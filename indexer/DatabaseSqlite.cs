@@ -9,14 +9,15 @@ namespace Indexer
     public class DatabaseSqlite : IDatabase
     {
         private SqliteConnection _connection;
-        public DatabaseSqlite()
+
+        public DatabaseSqlite(string databaseFile)
         {
 
             var connectionStringBuilder = new SqliteConnectionStringBuilder();
 
             connectionStringBuilder.Mode = SqliteOpenMode.ReadWriteCreate;
 
-            connectionStringBuilder.DataSource = Paths.DATABASE;
+            connectionStringBuilder.DataSource = databaseFile;
 
 
             _connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
@@ -32,8 +33,8 @@ namespace Indexer
             Execute("CREATE TABLE word(id INTEGER PRIMARY KEY, name VARCHAR(50))");
 
             Execute("CREATE TABLE Occ(wordId INTEGER, docId INTEGER, "
-                  + "FOREIGN KEY (wordId) REFERENCES word(id), "
-                  + "FOREIGN KEY (docId) REFERENCES document(id))");
+                    + "FOREIGN KEY (wordId) REFERENCES word(id), "
+                    + "FOREIGN KEY (docId) REFERENCES document(id))");
             Execute("CREATE INDEX word_index ON Occ (wordId)");
         }
 
@@ -50,7 +51,7 @@ namespace Indexer
             {
                 var command = _connection.CreateCommand();
                 command.CommandText =
-                @"INSERT INTO word(id, name) VALUES(@id,@name)";
+                    @"INSERT INTO word(id, name) VALUES(@id,@name)";
 
                 var paramName = command.CreateParameter();
                 paramName.ParameterName = "name";
@@ -73,12 +74,13 @@ namespace Indexer
             }
         }
 
-        public void InsertAllOcc(int docId, ISet<int> wordIds){
+        public void InsertAllOcc(int docId, ISet<int> wordIds)
+        {
             using (var transaction = _connection.BeginTransaction())
             {
                 var command = _connection.CreateCommand();
                 command.CommandText =
-                @"INSERT INTO occ(wordId, docId) VALUES(@wordId,@docId)";
+                    @"INSERT INTO occ(wordId, docId) VALUES(@wordId,@docId)";
 
                 var paramwordId = command.CreateParameter();
                 paramwordId.ParameterName = "wordId";
@@ -102,7 +104,8 @@ namespace Indexer
             }
         }
 
-        public void InsertWord(int id, string value){
+        public void InsertWord(int id, string value)
+        {
             var insertCmd = new SqliteCommand("INSERT INTO word(id, name) VALUES(@id,@name)");
             insertCmd.Connection = _connection;
 
@@ -115,8 +118,11 @@ namespace Indexer
             insertCmd.ExecuteNonQuery();
         }
 
-        public void InsertDocument(BEDocument doc){
-            var insertCmd = new SqliteCommand("INSERT INTO document(id, url, idxTime, creationTime) VALUES(@id,@url, @idxTime, @creationTime)");
+        public void InsertDocument(BEDocument doc)
+        {
+            var insertCmd =
+                new SqliteCommand(
+                    "INSERT INTO document(id, url, idxTime, creationTime) VALUES(@id,@url, @idxTime, @creationTime)");
             insertCmd.Connection = _connection;
 
             var pId = new SqliteParameter("id", doc.mId);
@@ -152,20 +158,28 @@ namespace Indexer
                     res.Add(w, id);
                 }
             }
+
             return res;
         }
 
-        public int GetDocumentCounts() {
-            var selectCmd = _connection.CreateCommand();
-            selectCmd.CommandText = "SELECT count(*) FROM document";
+        public int DocumentCounts
+        {
+            get
+            {
+                var selectCmd = _connection.CreateCommand();
+                selectCmd.CommandText = "SELECT count(*) FROM document";
 
-            using (var reader = selectCmd.ExecuteReader()) {
-                if (reader.Read()) {
-                    var count = reader.GetInt32(0);
-                    return count;
+                using (var reader = selectCmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        var count = reader.GetInt32(0);
+                        return count;
+                    }
                 }
+
+                return -1;
             }
-            return -1;
         }
     }
 }

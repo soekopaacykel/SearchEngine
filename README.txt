@@ -11,8 +11,7 @@ in the reverse index. It is in the ConsoleSearch project.
 The class library Shared contains classes that are used by the indexer
 and the ConsoleSearch. It contains:
 
-- Paths containing static paths for 1) files to index and, 2) a path for
-  the database
+- Paths containing static paths for files to index and the database
 - BEDocument (BE for Business Entity) - a class representing a document.
 
 

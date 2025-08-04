@@ -15,14 +15,14 @@ namespace ConsoleSearch
 
         /// <summary>
         /// Perform the essential search for documents. It will return
-        /// a list og KeyValuePairs - and here the key is the id of the
+        /// a list of KeyValuePairs - the key is the id of the
         /// document, and value is the number of words from the query
         /// contained in the document.
         /// </summary>
         List<KeyValuePair<int, int>> GetDocuments(List<int> wordIds);
 
         /// <summary>
-        /// Return all id of words, contained in [wordIds], bnut not
+        /// Return all id of words, contained in [wordIds], but not
         /// present in the document with id [docId]
         /// </summary>
         List<int> getMissing(int docId, List<int> wordIds);

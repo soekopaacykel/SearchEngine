@@ -120,6 +120,26 @@ namespace ConsoleSearch
             }
             return res;
         }
+        
+        public BEDocument GetDocDetails(int docId)
+        {
+            var selectCmd = _connection.CreateCommand();
+            selectCmd.CommandText = $"SELECT * FROM document where id = {docId}";
+
+            using (var reader = selectCmd.ExecuteReader())
+            {
+                if (reader.Read())
+                {
+                    var id = reader.GetInt32(0);
+                    var url = reader.GetString(1);
+                    var idxTime = reader.GetString(2);
+                    var creationTime = reader.GetString(3);
+
+                    return new BEDocument { mId = id, mUrl = url, mIdxTime = idxTime, mCreationTime = creationTime };
+                }
+            }
+            return null;
+        }
 
         /* Return a list of id's for words; all them among wordIds, but not present in the document
          */

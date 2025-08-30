@@ -13,6 +13,8 @@ namespace ConsoleSearch
 
         List<BEDocument> GetDocDetails(List<int> docIds);
 
+        BEDocument GetDocDetails(int docId);
+
         /// <summary>
         /// Perform the essential search for documents. It will return
         /// a list of KeyValuePairs - the key is the id of the

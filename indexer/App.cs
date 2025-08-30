@@ -8,7 +8,7 @@ namespace Indexer
     public class App
     {
         public void Run(){
-            IDatabase db = new DatabasePostgres(Paths.DATABASE);
+            IDatabase db = new DatabaseSqlite(Paths.DATABASE);
             Crawler crawler = new Crawler(db);
 
             var root = new DirectoryInfo(Config.FOLDER);

@@ -17,6 +17,7 @@ public class DatabasePostgres : IDatabase
                 
             _connection.Open();
 
+            
             Execute("DROP TABLE IF EXISTS Occ");
 
             Execute("DROP TABLE IF EXISTS document");

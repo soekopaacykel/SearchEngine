@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using Shared;
+using System.Linq;
+
 
 namespace Indexer
 {
@@ -16,7 +18,7 @@ namespace Indexer
 
             DateTime start = DateTime.Now;
 
-            crawler.IndexFilesIn(root, new List<string> { ".txt"});        
+            crawler.IndexFilesIn(root, new List<string> { ".txt" });
 
             TimeSpan used = DateTime.Now - start;
             Console.WriteLine("DONE! used " + used.TotalMilliseconds);
@@ -25,14 +27,36 @@ namespace Indexer
 
             Console.WriteLine($"Indexed {db.DocumentCounts} documents");
             Console.WriteLine($"Number of different words: {all.Count}");
-            int count = 10;
-            Console.WriteLine($"The first {count} is:");
-            foreach (var p in all) {
-                Console.WriteLine("<" + p.Key + ", " + p.Value + ">");
-                count--;
-                if (count == 0) break;
+
+            // spørger til hvor mange "top hits" vi vil have ud:
+            long totalOccurrences = 0;
+            foreach (var p in all)
+            {
+                totalOccurrences += p.Value; // summerer alle forekomster
+            }
+            Console.WriteLine($"Total number of word occurrences: {totalOccurrences}");
+
+            Console.Write("How many top words would you like to see? ");
+            if (int.TryParse(Console.ReadLine(), out int topN))
+            {
+                // Sorter ordene efter hyppighed, faldende
+                var sorted = all.OrderByDescending(p => p.Value);
+
+                Console.WriteLine($"The top {topN} words are:");
+                int shown = 0;
+                foreach (var p in sorted)
+                {
+                    Console.WriteLine($"<{p.Key}> - {p.Value}");
+                    shown++;
+                    if (shown >= topN) break;
+                }
+            }
+            else
+            {
+                Console.WriteLine("Invalid number entered.");
             }
         }
+        
 
         private IDatabase GetDatabase()
         {

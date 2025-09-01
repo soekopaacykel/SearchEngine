@@ -11,8 +11,9 @@ namespace ConsoleSearch
         /// </summary>
         List<int> GetWordIds(string[] query, out List<string> outIgnored);
 
-        List<BEDocument> GetDocDetails(List<int> docIds);
-
+        /// <summary>
+        /// Get document by its id
+        /// </summary>
         BEDocument GetDocDetails(int docId);
 
         /// <summary>

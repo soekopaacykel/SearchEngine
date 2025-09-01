@@ -1,20 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
-using Shared;
 
 namespace ConsoleSearch
 {
     public class App
     {
-        public App()
-        {
-        }
 
         public void Run()
         {
-            SearchLogic mSearchLogic = new SearchLogic(new DatabaseSqlite());
-            
-
+            IDatabase db = GetDatabase();
+            SearchLogic mSearchLogic = new SearchLogic(db);
             Console.WriteLine("Console Search");
             
             while (true)
@@ -31,7 +25,6 @@ namespace ConsoleSearch
                 if (result.Ignored.Count > 0) {
                     Console.WriteLine($"Ignored: {string.Join(',', result.Ignored)}");
                 }
-
                 
                 int idx = 1;
                 foreach (var doc in result.DocumentHits) {
@@ -43,12 +36,19 @@ namespace ConsoleSearch
                 Console.WriteLine("Documents: " + result.Hits + ". Time: " + result.TimeUsed.TotalMilliseconds);
             }
         }
-
-        string ArrayAsString(string[] s) {
-            return s.Length == 0?"[]":$"[{String.Join(',', s)}]";
-            //foreach (var str in s)
-            //    res += str + ", ";
-            //return res.Substring(0, res.Length - 2) + "]";
+        
+        private IDatabase GetDatabase()
+        {
+            Console.Write("Use SQLite (1) or Postgres (2) database?");
+            string input = Console.ReadLine();
+            if (input.Equals("1"))
+                return new DatabaseSqlite();
+            else if (input.Equals("2"))
+                return new DatabasePostgres();
+            Console.WriteLine("Wrong input - try again...");
+            return GetDatabase();
         }
+
+        string ArrayAsString(string[] s) => s.Length == 0?"[]":$"[{String.Join(',', s)}]";
     }
 }

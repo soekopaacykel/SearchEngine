@@ -16,7 +16,7 @@ namespace ConsoleSearch
         {
             var connectionStringBuilder = new SqliteConnectionStringBuilder();
 
-            connectionStringBuilder.DataSource = Paths.DATABASE;
+            connectionStringBuilder.DataSource = Paths.SQLITE_DATABASE;
 
 
             _connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
@@ -94,28 +94,6 @@ namespace ConsoleSearch
                     var w = reader.GetString(1);
 
                     res.Add(w, id);
-                }
-            }
-            return res;
-        }
-
-        public List<BEDocument> GetDocDetails(List<int> docIds)
-        {
-            List<BEDocument> res = new List<BEDocument>();
-
-            var selectCmd = _connection.CreateCommand();
-            selectCmd.CommandText = "SELECT * FROM document where id in " + AsString(docIds);
-
-            using (var reader = selectCmd.ExecuteReader())
-            {
-                while (reader.Read())
-                {
-                    var id = reader.GetInt32(0);
-                    var url = reader.GetString(1);
-                    var idxTime = reader.GetString(2);
-                    var creationTime = reader.GetString(3);
-
-                    res.Add(new BEDocument { mId = id, mUrl = url, mIdxTime = idxTime, mCreationTime = creationTime });
                 }
             }
             return res;

@@ -7,8 +7,9 @@ namespace Indexer
 {
     public class App
     {
-        public void Run(){
-            IDatabase db = new DatabaseSqlite(Paths.DATABASE);
+        public void Run()
+        {
+            IDatabase db = GetDatabase();
             Crawler crawler = new Crawler(db);
 
             var root = new DirectoryInfo(Config.FOLDER);
@@ -31,6 +32,18 @@ namespace Indexer
                 count--;
                 if (count == 0) break;
             }
+        }
+
+        private IDatabase GetDatabase()
+        {
+            Console.Write("Use SQLite (1) or Postgres (2) database?");
+            string input = Console.ReadLine();
+            if (input.Equals("1"))
+                return new DatabaseSqlite();
+            else if (input.Equals("2"))
+                return new DatabasePostgres();
+            Console.WriteLine("Wrong input - try again...");
+            return GetDatabase();
         }
     }
 }

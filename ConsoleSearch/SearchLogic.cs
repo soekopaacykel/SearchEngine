@@ -25,6 +25,8 @@ namespace ConsoleSearch
             // Convert words to wordids
             var wordIds = mDatabase.GetWordIds(query, out ignored);
 
+            if (wordIds.Count == 0) // no words know in index
+                 return new SearchResult(query, 0, new List<DocumentHit>(), ignored, DateTime.Now - start);
             // perform the search - get all docIds
             var docIds =  mDatabase.GetDocuments(wordIds);
 
@@ -40,7 +42,7 @@ namespace ConsoleSearch
             foreach (var doc in mDatabase.GetDocDetails(top))
             {
                 var missing = mDatabase.WordsFromIds(mDatabase.getMissing(doc.mId, wordIds));
-                  
+                missing.AddRange(ignored);
                 docresult.Add(new DocumentHit(doc, docIds[idx++].Value, missing));
             }
 

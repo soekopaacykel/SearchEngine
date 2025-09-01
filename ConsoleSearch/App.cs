@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Shared;
 
 namespace ConsoleSearch
 {
@@ -31,6 +32,7 @@ namespace ConsoleSearch
                     Console.WriteLine($"Ignored: {string.Join(',', result.Ignored)}");
                 }
 
+                
                 int idx = 1;
                 foreach (var doc in result.DocumentHits) {
                     Console.WriteLine($"{idx} : {doc.Document.mUrl} -- contains {doc.NoOfHits} search terms");

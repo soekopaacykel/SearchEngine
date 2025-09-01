@@ -1,19 +1,18 @@
 using System.Collections.Generic;
 using Shared.Model;
-//using Microsoft.Data.Sqlite;
 using Npgsql;
-
+using Shared;
 namespace Indexer;
 
 public class DatabasePostgres : IDatabase
 {
     private NpgsqlConnection _connection;
 
-        public DatabasePostgres(string connectionString)
+    public DatabasePostgres()
         {
             
             _connection = new NpgsqlConnection();
-            _connection.ConnectionString = connectionString;
+            _connection.ConnectionString = Paths.POSTGRES_DATABASE;
                 
             _connection.Open();
 

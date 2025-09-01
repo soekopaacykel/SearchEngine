@@ -13,11 +13,11 @@ public class DatabasePostgres : IDatabase
 
         private Dictionary<string, int> mWords = null;
 
-        public DatabasePostgres(string connectionString)
+        public DatabasePostgres()
         {
 
 
-            _connection = new NpgsqlConnection(connectionString);
+            _connection = new NpgsqlConnection(Paths.POSTGRES_DATABASE);
 
             _connection.Open();
 
@@ -97,26 +97,25 @@ public class DatabasePostgres : IDatabase
             return res;
         }
 
-        public List<BEDocument> GetDocDetails(List<int> docIds)
+        public BEDocument GetDocDetails(int docId)
         {
-            List<BEDocument> res = new List<BEDocument>();
 
             var selectCmd = _connection.CreateCommand();
-            selectCmd.CommandText = "SELECT * FROM document where id in " + AsString(docIds);
+            selectCmd.CommandText = $"SELECT * FROM document where id = {docId}";
 
             using (var reader = selectCmd.ExecuteReader())
             {
-                while (reader.Read())
+                if (reader.Read())
                 {
                     var id = reader.GetInt32(0);
                     var url = reader.GetString(1);
                     var idxTime = reader.GetString(2);
                     var creationTime = reader.GetString(3);
 
-                    res.Add(new BEDocument { mId = id, mUrl = url, mIdxTime = idxTime, mCreationTime = creationTime });
+                    return new BEDocument { mId = id, mUrl = url, mIdxTime = idxTime, mCreationTime = creationTime };
                 }
             }
-            return res;
+            return null;
         }
 
         /* Return a list of id's for words; all them among wordIds, but not present in the document

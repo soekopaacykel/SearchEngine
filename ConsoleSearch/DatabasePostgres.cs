@@ -1,10 +1,11 @@
 using System.Collections.Generic;
-using Npgsql;
+
 
 namespace ConsoleSearch;
 using Shared;
 using Shared.Model;
-//using Microsoft.Data.Sqlite;
+using Npgsql;
+
 
 public class DatabasePostgres : IDatabase
 {

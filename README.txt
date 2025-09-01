@@ -1,4 +1,7 @@
-﻿Version 1: 04-08-2025
+﻿Version 1.1: 01-09-2025
+Postgres is added as an option for database engine.
+
+Version 1: 04-08-2025
 
 This codebase is s PoC seachengine that consist of two programs and a class library.
 

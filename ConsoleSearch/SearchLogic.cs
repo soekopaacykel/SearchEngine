@@ -6,37 +6,57 @@ namespace ConsoleSearch
 {
     public class SearchLogic
     {
-        IDatabase mDatabase;
+        private readonly IDatabase mDatabase;
+        private bool mCaseSensitive = true; // standard er case sensitive (som nu)
 
         public SearchLogic(IDatabase database)
         {
             mDatabase = database;
         }
 
-        /* Perform search of documents containing words from query. The result will
-         * contain details about amost maxAmount of documents.
-         */
-        public SearchResult Search(String[] query, int maxAmount)
+        /// <summary>
+        /// Sætter om søgning skal være case sensitive eller ej.
+        /// </summary>
+        public void SetCaseSensitivity(bool enabled)
+        {
+            mCaseSensitive = enabled;
+            Console.WriteLine("Case sensitivity is now " + (enabled ? "ON" : "OFF"));
+        }
+
+        /// <summary>
+        /// Udfører søgningen baseret på query-ordene.
+        /// </summary>
+        public SearchResult Search(string[] query, int maxAmount)
         {
             List<string> ignored;
-
             DateTime start = DateTime.Now;
 
-            // Convert words to wordids
+            // Hvis case sensitivity er slået fra → konverter alle ord til lowercase
+            if (!mCaseSensitive)
+            {
+                for (int i = 0; i < query.Length; i++)
+                {
+                    query[i] = query[i].ToLowerInvariant();
+                }
+            }
+
+            // Konverter ord til wordIds
             var wordIds = mDatabase.GetWordIds(query, out ignored);
 
-            if (wordIds.Count == 0) // no words know in index
-                 return new SearchResult(query, 0, new List<DocumentHit>(), ignored, DateTime.Now - start);
-            // perform the search - get all docIds
-            var docIds =  mDatabase.GetDocuments(wordIds);
+            if (wordIds.Count == 0) // Ingen kendte ord
+            {
+                return new SearchResult(query, 0, new List<DocumentHit>(), ignored, DateTime.Now - start);
+            }
 
-            // get ids for the first maxAmount             
+            // Hent dokumenter
+            var docIds = mDatabase.GetDocuments(wordIds);
+
+            // Tag de første maxAmount
             var top = new List<int>();
             foreach (var p in docIds.GetRange(0, Math.Min(maxAmount, docIds.Count)))
                 top.Add(p.Key);
 
-            // compose the result.
-            // all the documentHit
+            // Sammensæt resultaterne
             List<DocumentHit> docresult = new List<DocumentHit>();
             int idx = 0;
             foreach (var docId in top)

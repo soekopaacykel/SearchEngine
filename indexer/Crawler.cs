@@ -32,7 +32,7 @@ namespace Indexer
             {
                 foreach (var aWord in line.Split(separators, StringSplitOptions.RemoveEmptyEntries))
                 {
-                    res.Add(aWord);
+                    res.Add(aWord.ToLowerInvariant());
                 }
             }
 

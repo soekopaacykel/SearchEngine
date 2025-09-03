@@ -4,7 +4,9 @@ using Shared.Model;
 
 namespace ConsoleSearch
 {
-    public class SearchLogic
+    
+
+    public class SearchLogic : ISearchLogic
     {
         private readonly IDatabase mDatabase;
         private bool mCaseSensitive = true; // standard er case sensitive (som nu)

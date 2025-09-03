@@ -8,7 +8,7 @@ namespace ConsoleSearch
         public void Run()
         {
             IDatabase db = GetDatabase();
-            SearchLogic mSearchLogic = new SearchLogic(db);
+            ISearchLogic mSearchLogic = SearchFactory.GetSearchLogic(db);
             Console.WriteLine("Console Search");
 
             while (true)

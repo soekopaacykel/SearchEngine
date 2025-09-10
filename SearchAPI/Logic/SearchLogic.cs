@@ -5,8 +5,6 @@ using Shared.Model;
 
 namespace SearchAPI.Logic
 {
-    
-
     public class SearchLogic //: ISearchLogic
     {
         IDatabase mDatabase;
@@ -29,7 +27,12 @@ namespace SearchAPI.Logic
             var wordIds = mDatabase.GetWordIds(query, out ignored);
 
             if (wordIds.Count == 0) // no words know in index
-                 return new SearchResult(query, 0, new List<DocumentHit>(), ignored, DateTime.Now - start);
+                 return new SearchResult{
+                     Query = query, 
+                     Hits = 0, 
+                     DocumentHits = new List<DocumentHit>(), 
+                     Ignored = ignored, 
+                     TimeUsed = DateTime.Now - start};
             // perform the search - get all docIds
             var docIds =  mDatabase.GetDocuments(wordIds);
 
@@ -47,10 +50,20 @@ namespace SearchAPI.Logic
                 BEDocument doc = mDatabase.GetDocDetails(docId);
                 var missing = mDatabase.WordsFromIds(mDatabase.getMissing(doc.mId, wordIds));
                 missing.AddRange(ignored);
-                docresult.Add(new DocumentHit(doc, docIds[idx++].Value, missing));
+                docresult.Add(new DocumentHit
+                {
+                    Document = doc, 
+                    NoOfHits = docIds[idx++].Value,
+                    Missing = missing
+                });
             }
 
-            return new SearchResult(query, docIds.Count, docresult, ignored, DateTime.Now - start);
+            return new SearchResult{
+                Query = query, 
+                Hits = docIds.Count, 
+                DocumentHits = docresult, 
+                Ignored = ignored, 
+                TimeUsed = DateTime.Now - start};
         }
     }
 }

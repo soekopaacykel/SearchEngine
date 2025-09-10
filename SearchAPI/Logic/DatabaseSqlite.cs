@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Shared;
-using Shared.Model;
 using Microsoft.Data.Sqlite;
 
 namespace Core

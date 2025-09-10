@@ -2,8 +2,7 @@ using System.Collections.Generic;
 
 
 namespace Core;
-using Shared;
-using Shared.Model;
+
 using Npgsql;
 
 

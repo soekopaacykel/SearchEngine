@@ -14,13 +14,13 @@ namespace ConsoleSearch
 
         public SearchProxy()
         {
-            mHttp = new System.Net.Http.HttpClient();
+            mHttp = new HttpClient();
         }
 
         public async Task<SearchResult> Search(string[] query, int maxAmount)
         {
-            return await mHttp.GetFromJsonAsync<SearchResult>($"{serverEndPoint}{String.Join(",", query)}/{maxAmount}");
-            
+            var completeUrl = $"{serverEndPoint}{String.Join(",", query)}/{maxAmount}";
+            return await mHttp.GetFromJsonAsync<SearchResult>(completeUrl);
         }
     }
 }

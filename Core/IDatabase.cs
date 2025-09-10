@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using Shared.Model;
 
 namespace Core
 {

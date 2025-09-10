@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using Shared;
-using System.Linq;
-
 
 namespace Indexer
 {

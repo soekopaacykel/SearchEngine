@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using Shared.Model;
+
 using Npgsql;
-using Shared;
+using Core;
 namespace Indexer;
 
 public class DatabasePostgres : IDatabase

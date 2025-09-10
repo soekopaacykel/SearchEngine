@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Shared.Model;
-using Shared;
+using Core;
 using Microsoft.Data.Sqlite;
 
 namespace Indexer

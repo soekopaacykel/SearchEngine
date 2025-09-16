@@ -1,0 +1,126 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Search Engine";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Search Engine</h1>
+    <p>Enter your search query below</p>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="api-status mb-3 @(Model.IsApiAvailable ? "api-online" : "api-offline")">
+        <span class="status-indicator"></span>
+        API Status: @(Model.IsApiAvailable ? "Online" : "Offline")
+
+        <button class="btn btn-sm @(Model.IsApiAvailable ? "btn-outline-success" : "btn-outline-warning")"
+            data-bs-toggle="collapse" data-bs-target="#apiConfig" aria-expanded="false" aria-controls="apiConfig">
+            Configure API
+        </button>
+
+        <form method="post" asp-page-handler="CheckHealth" class="d-inline">
+            <button type="submit" class="btn btn-sm btn-outline-secondary">
+                Check API Health
+            </button>
+        </form>
+    </div>
+
+    <div class="collapse mb-4" id="apiConfig">
+        <div class="card card-body">
+            <form method="post" asp-page-handler="UpdateApi">
+                <div class="input-group">
+                    <span class="input-group-text">API URL</span>
+                    <input asp-for="ApiUrl" class="form-control" placeholder="e.g., http://localhost:5000" />
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+                <div class="form-text">
+                    Enter the base URL of the Search API (e.g., http://localhost:5000)
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <form method="get" class="search-form">
+        <div class="form-group">
+            <div class="input-group mb-3">
+                <input asp-for="SearchQuery" class="form-control" placeholder="Enter search terms..." />
+                <button type="submit" class="btn btn-primary search-button" @(Model.IsApiAvailable ? "" : "disabled")>
+                    Search
+                </button>
+            </div>
+            <div class="form-text small">
+                <label for="MaxResults">Maximum results to display:</label>
+                <input asp-for="MaxResults" class="form-control-sm" min="1" max="100" style="width: 60px;" />
+            </div>
+        </div>
+    </form>
+
+    @if (!Model.IsApiAvailable)
+    {
+        <div class="alert alert-warning">
+            <p>
+                <strong>API is currently unavailable.</strong> Please check the API URL configuration or ensure that the API
+                is running.
+            </p>
+        </div>
+    }
+</div>
+
+@if (Model.HasSearched)
+{
+    <div class="search-results mt-4">
+        <h2>Search Results for "@Model.SearchQuery"</h2>
+        <p>Found @Model.SearchResult.Hits results in @Model.SearchResult.TimeUsed.TotalMilliseconds ms</p>
+
+        @if (Model.SearchResult.Ignored.Count > 0)
+        {
+            <div class="alert alert-warning">
+                <p>Ignored terms: @string.Join(", ", Model.SearchResult.Ignored)</p>
+            </div>
+        }
+
+        @if (Model.SearchResult.DocumentHits.Count > 0)
+        {
+            <div class="list-group">
+                @foreach (var hit in Model.SearchResult.DocumentHits)
+                {
+                    <div class="list-group-item result-item">
+                        <h5 class="mb-1">
+                            <a href="@hit.Document.mUrl" target="_blank">@hit.Document.mUrl</a>
+                        </h5>
+                        <p class="mb-1">
+                            <span class="badge bg-primary">@hit.NoOfHits hit(s)</span>
+                            <small class="text-muted">Created: @hit.Document.mCreationTime</small>
+                            <small class="text-muted">Indexed: @hit.Document.mIdxTime</small>
+                        </p>
+                        @if (hit.Missing.Count > 0)
+                        {
+                            <p class="small">Missing terms: @string.Join(", ", hit.Missing)</p>
+                        }
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info">
+                No results found. Try different search terms.
+            </div>
+        }
+    </div>
+}

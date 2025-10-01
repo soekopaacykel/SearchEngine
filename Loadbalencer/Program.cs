@@ -23,7 +23,7 @@ var random = new Random();
 app.MapFallback(async (HttpContext context, IHttpClientFactory httpClientFactory) =>
 {
     Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Incoming request: {context.Request.Method} {context.Request.Path}");
-    
+
     try
     {
         // Select a random backend server
@@ -41,20 +41,20 @@ app.MapFallback(async (HttpContext context, IHttpClientFactory httpClientFactory
         if (context.Request.Method.Equals("GET", StringComparison.OrdinalIgnoreCase))
         {
             var response = await httpClient.GetAsync(targetUrl);
-            
+
             // Copy response status code
             context.Response.StatusCode = (int)response.StatusCode;
-            
+
             // Copy content type
             if (response.Content.Headers.ContentType != null)
             {
                 context.Response.ContentType = response.Content.Headers.ContentType.ToString();
             }
-            
+
             // Copy response body
             var responseContent = await response.Content.ReadAsStringAsync();
             await context.Response.WriteAsync(responseContent);
-            
+
             Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] {context.Request.Method} {context.Request.Path} -> {selectedServer} (Status: {response.StatusCode})");
         }
         else
@@ -88,10 +88,10 @@ app.MapFallback(async (HttpContext context, IHttpClientFactory httpClientFactory
             }
 
             var response = await httpClient.SendAsync(requestMessage);
-            
+
             // Copy response
             context.Response.StatusCode = (int)response.StatusCode;
-            
+
             foreach (var header in response.Headers)
             {
                 context.Response.Headers[header.Key] = header.Value.ToArray();
@@ -104,7 +104,7 @@ app.MapFallback(async (HttpContext context, IHttpClientFactory httpClientFactory
 
             var responseContent = await response.Content.ReadAsByteArrayAsync();
             await context.Response.Body.WriteAsync(responseContent, 0, responseContent.Length);
-            
+
             Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] {context.Request.Method} {context.Request.Path} -> {selectedServer} (Status: {response.StatusCode})");
         }
     }

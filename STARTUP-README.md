@@ -7,7 +7,8 @@ This directory contains scripts to easily start and stop all SearchEngine servic
 ### 🚀 Start Scripts
 
 #### `start-all.ps1` (PowerShell - Recommended)
-- **Features**: 
+
+- **Features**:
   - Colored output and progress indicators
   - Service health checks and port verification
   - Proper error handling and timeout detection
@@ -15,7 +16,8 @@ This directory contains scripts to easily start and stop all SearchEngine servic
 - **Usage**: Right-click → "Run with PowerShell" or `./start-all.ps1`
 
 #### `start-all.bat` (Batch File)
-- **Features**: 
+
+- **Features**:
   - Simple and fast
   - Works on any Windows system
   - No PowerShell execution policy issues
@@ -24,6 +26,7 @@ This directory contains scripts to easily start and stop all SearchEngine servic
 ### 🛑 Stop Scripts
 
 #### `stop-all.ps1` (PowerShell)
+
 - **Features**:
   - Stops all services by port number
   - Kills remaining processes by name
@@ -32,12 +35,12 @@ This directory contains scripts to easily start and stop all SearchEngine servic
 
 ## Services Started
 
-| Service | Port | Launch Profile | Description |
-|---------|------|----------------|-------------|
-| SearchAPI Instance 1 | 5154 | Ole | Primary API instance |
-| SearchAPI Instance 2 | 5155 | Henrik | Secondary API instance |
-| Load Balancer | 5000 | loadbalancer | Distributes requests between APIs |
-| SearchWeb | Dynamic | default | Web interface |
+| Service              | Port    | Launch Profile | Description                       |
+| -------------------- | ------- | -------------- | --------------------------------- |
+| SearchAPI Instance 1 | 5154    | Ole            | Primary API instance              |
+| SearchAPI Instance 2 | 5155    | Henrik         | Secondary API instance            |
+| Load Balancer        | 5000    | loadbalancer   | Distributes requests between APIs |
+| SearchWeb            | Dynamic | default        | Web interface                     |
 
 ## Service URLs
 
@@ -73,16 +76,19 @@ dotnet run
 ## Troubleshooting
 
 ### If PowerShell script doesn't run:
+
 ```powershell
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
 ### If ports are already in use:
+
 1. Run `stop-all.ps1` to clean up
 2. Check with `netstat -an | findstr ":5000\|:5154\|:5155"`
 3. Manually kill processes if needed
 
 ### If services don't start:
+
 1. Check that .NET SDK is installed
 2. Ensure all projects compile: `dotnet build`
 3. Check individual project directories for errors

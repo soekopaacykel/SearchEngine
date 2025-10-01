@@ -7,10 +7,28 @@ namespace SearchAPI.Logic
     public class SearchLogic //: ISearchLogic
     {
         IDatabase mDatabase;
+        private bool mCaseSensitive = true; // standard er case sensitive (som nu)
 
         public SearchLogic(IDatabase database)
         {
             mDatabase = database;
+        }
+
+        /// <summary>
+        /// Sætter om søgning skal være case sensitive eller ej.
+        /// </summary>
+        public void SetCaseSensitivity(bool enabled)
+        {
+            mCaseSensitive = enabled;
+            Console.WriteLine("Case sensitivity is now " + (enabled ? "ON" : "OFF"));
+        }
+
+        /// <summary>
+        /// Returnerer om søgning er case sensitive.
+        /// </summary>
+        public bool IsCaseSensitive()
+        {
+            return mCaseSensitive;
         }
 
         /* Perform search of documents containing words from query. The result will
@@ -22,8 +40,16 @@ namespace SearchAPI.Logic
 
             DateTime start = DateTime.Now;
 
+            // Database only contains lowercase words, so we always need to convert to lowercase for database lookup
+            // Case sensitivity will affect how we present results, not the database query
+            string[] processedQuery = new string[query.Length];
+            for (int i = 0; i < query.Length; i++)
+            {
+                processedQuery[i] = query[i].ToLowerInvariant();
+            }
+
             // Convert words to wordids
-            var wordIds = mDatabase.GetWordIds(query, out ignored);
+            var wordIds = mDatabase.GetWordIds(processedQuery, out ignored);
 
             if (wordIds.Count == 0) // no words know in index
                  return new SearchResult{

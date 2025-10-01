@@ -403,3 +403,7 @@ ASALocalRun/
 
 # Local History for Visual Studio
 .localhistory/
+# Discord Bot Configuration
+Discord/appsettings.json
+# Keep example files
+!Discord/appsettings.example.json

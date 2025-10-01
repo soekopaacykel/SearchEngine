@@ -8,7 +8,7 @@ namespace ConsoleSearch
 {
     public class SearchProxy : ISearchLogic
     {
-        private string serverEndPoint = "http://localhost:5154/api/search/";
+        private string serverEndPoint = "http://localhost:5156/api/search/";
 
         private HttpClient mHttp;
 

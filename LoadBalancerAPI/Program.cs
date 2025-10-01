@@ -46,7 +46,7 @@ app.MapGet(
             var result = await loadBalancer.ForwardSearchRequestAsync(
                 $"/api/search/{query}/{maxAmount}"
             );
-            return Results.Ok(result);
+            return Results.Json(result);
         }
         catch (Exception ex)
         {
@@ -124,7 +124,7 @@ public class RoundRobinLoadBalancer
         }
     }
 
-    public async Task<string> ForwardSearchRequestAsync(string path)
+    public async Task<object> ForwardSearchRequestAsync(string path)
     {
         var instance = GetNextHealthyInstance();
         var httpClient = _httpClientFactory.CreateClient();
@@ -133,7 +133,15 @@ public class RoundRobinLoadBalancer
         {
             var response = await httpClient.GetAsync($"{instance.BaseUrl}{path}");
             response.EnsureSuccessStatusCode();
-            return await response.Content.ReadAsStringAsync();
+            var jsonString = await response.Content.ReadAsStringAsync();
+            
+            // Deserialize the JSON string to an object so it's returned as proper JSON
+            var searchResult = JsonSerializer.Deserialize<object>(jsonString, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+            
+            return searchResult;
         }
         catch (Exception)
         {

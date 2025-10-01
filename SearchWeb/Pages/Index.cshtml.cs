@@ -23,6 +23,9 @@ public class IndexModel : PageModel
     [BindProperty]
     public string ApiUrl { get; set; } = string.Empty;
 
+    [BindProperty(SupportsGet = true)]
+    public string FilePath { get; set; } = string.Empty;
+
     public SearchResult? SearchResult { get; private set; }
 
     public bool HasSearched { get; private set; }
@@ -30,6 +33,8 @@ public class IndexModel : PageModel
     public bool IsApiAvailable => _searchService.ApiIsAvailable;
 
     public string ErrorMessage { get; private set; } = string.Empty;
+
+    public FileContentResponse FileContent { get; private set; }
 
     public IndexModel(ILogger<IndexModel> logger, SearchService searchService, IConfiguration configuration)
     {
@@ -41,12 +46,22 @@ public class IndexModel : PageModel
     public async Task OnGetAsync()
     {
         // Set the current API URL from configuration
-        ApiUrl = _configuration["SearchApi:BaseUrl"] ?? "http://localhost:5154";
+        ApiUrl = _configuration["SearchApi:BaseUrl"] ?? "http://localhost:5000";
 
         // Check API health if needed
         if (!IsApiAvailable)
         {
             await _searchService.CheckApiHealthAsync();
+        }
+
+        // If user requested file content
+        if (!string.IsNullOrWhiteSpace(FilePath))
+        {
+            FileContent = await _searchService.GetFileContentAsync(FilePath);
+            if (FileContent == null)
+            {
+                TempData["ErrorMessage"] = "Could not retrieve file content. Please make sure the API is available and the file exists.";
+            }
         }
 
         // If user submitted a search query

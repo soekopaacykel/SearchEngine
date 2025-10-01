@@ -6,6 +6,13 @@ using Microsoft.Extensions.Logging;
 
 namespace SearchWeb.Services
 {
+    public class FileContentResponse
+    {
+        public string Content { get; set; }
+        public string FilePath { get; set; }
+        public string FileName { get; set; }
+    }
+
     public class SearchService
     {
         private readonly HttpClient _httpClient;
@@ -22,7 +29,7 @@ namespace SearchWeb.Services
             _baseUrl = _configuration["SearchApi:BaseUrl"] ?? "http://localhost:5000";
 
             // Set a reasonable timeout to avoid long waits for unavailable services
-            _httpClient.Timeout = TimeSpan.FromSeconds(5);
+            _httpClient.Timeout = TimeSpan.FromSeconds(30);
         }
 
         public bool ApiIsAvailable => _apiIsAvailable;
@@ -124,6 +131,47 @@ namespace SearchWeb.Services
             var result = CreateEmptyResult(query);
             result.Ignored = new List<string> { errorMessage };
             return result;
+        }
+
+        public async Task<FileContentResponse> GetFileContentAsync(string filePath)
+        {
+            if (!_apiIsAvailable)
+            {
+                _logger.LogWarning("Cannot retrieve file content: API is unavailable");
+                return null;
+            }
+
+            try
+            {
+                // Encode the file path properly for a query parameter
+                var encodedPath = Uri.EscapeDataString(filePath);
+                var requestUrl = $"{_baseUrl}/api/file-content?filePath={encodedPath}";
+
+                _logger.LogInformation($"Requesting file content from: {requestUrl}");
+                var response = await _httpClient.GetAsync(requestUrl);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    var result = JsonSerializer.Deserialize<FileContentResponse>(content, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    _logger.LogInformation($"Successfully retrieved content for file: {filePath}");
+                    return result;
+                }
+                else
+                {
+                    _logger.LogWarning($"Failed to retrieve file content. Status code: {response.StatusCode}");
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error retrieving file content: {ex.Message}");
+                return null;
+            }
         }
     }
 }

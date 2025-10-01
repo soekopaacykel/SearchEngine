@@ -101,7 +101,7 @@
                 {
                     <div class="list-group-item result-item">
                         <h5 class="mb-1">
-                            <a href="@hit.Document.mUrl" target="_blank">@hit.Document.mUrl</a>
+                            <a href="@("file:///" + hit.Document.mUrl.Replace("\\", "/"))" target="_blank">@hit.Document.mUrl</a>
                         </h5>
                         <p class="mb-1">
                             <span class="badge bg-primary">@hit.NoOfHits hit(s)</span>
@@ -112,6 +112,10 @@
                         {
                             <p class="small">Missing terms: @string.Join(", ", hit.Missing)</p>
                         }
+                        <div class="btn-group">
+                            <a href="?FilePath=@Uri.EscapeDataString(hit.Document.mUrl)" class="btn btn-sm btn-outline-primary">View
+                                Content</a>
+                        </div>
                     </div>
                 }
             </div>
@@ -122,5 +126,24 @@
                 No results found. Try different search terms.
             </div>
         }
+    </div>
+}
+
+@if (Model.FileContent != null)
+{
+    <div class="mt-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">File Content: @Model.FileContent.FileName</h5>
+                <a href="?SearchQuery=@Model.SearchQuery&MaxResults=@Model.MaxResults"
+                    class="btn btn-sm btn-outline-secondary">Close</a>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted">Path: @Model.FileContent.FilePath</p>
+                <div class="file-content border rounded p-3 bg-light">
+                    <pre class="mb-0" style="white-space: pre-wrap;"><code>@Model.FileContent.Content</code></pre>
+                </div>
+            </div>
+        </div>
     </div>
 }

@@ -1,0 +1,6 @@
+﻿<Project>
+  <!-- Define a no-op target named 'Loadbalencer' so that builds that call it do not fail. -->
+  <Target Name="Loadbalencer" AfterTargets="Build">
+    <Message Importance="Low" Text="[Directory.Build.targets] No-op Loadbalencer target executed after Build." />
+  </Target>
+</Project>

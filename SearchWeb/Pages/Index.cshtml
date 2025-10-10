@@ -86,6 +86,14 @@
     <div class="search-results mt-4">
         <h2>Search Results for "@Model.SearchQuery"</h2>
         <p>Found @Model.SearchResult.Hits results in @Model.SearchResult.TimeUsed.TotalMilliseconds ms</p>
+        <div class="alert alert-secondary text-start">
+            <div><strong>API:</strong> @Model.SearchResult.ApiInstance</div>
+            <div><strong>Database mode:</strong> @Model.SearchResult.DatabaseMode</div>
+            @if (Model.SearchResult.ShardsUsed != null && Model.SearchResult.ShardsUsed.Count > 0)
+            {
+                <div><strong>Shards:</strong> @string.Join(" | ", Model.SearchResult.ShardsUsed)</div>
+            }
+        </div>
 
         @if (Model.SearchResult.Ignored.Count > 0)
         {
@@ -107,6 +115,10 @@
                             <span class="badge bg-primary">@hit.NoOfHits hit(s)</span>
                             <small class="text-muted">Created: @hit.Document.mCreationTime</small>
                             <small class="text-muted">Indexed: @hit.Document.mIdxTime</small>
+                            @if (Model.SearchResult?.DocShard != null && Model.SearchResult.DocShard.ContainsKey(hit.Document.mId))
+                            {
+                                <span class="badge bg-info text-dark">Shard: @Model.SearchResult.DocShard[hit.Document.mId]</span>
+                            }
                         </p>
                         @if (hit.Missing.Count > 0)
                         {

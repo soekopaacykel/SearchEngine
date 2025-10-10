@@ -61,7 +61,20 @@ namespace Indexer
             Console.Write("Use SQLite (1) or Postgres (2) database?");
             string input = Console.ReadLine();
             if (input.Equals("1"))
-                return new DatabaseSqlite();
+            {
+                // If shards configured (2 or more), use sharded indexer; else single DB
+                var shards = Core.Paths.SQLITE_SHARD_DATABASES;
+                if (shards != null && shards.Length >= 2)
+                {
+                    Console.WriteLine($"Using sharded SQLite with {shards.Length} shards...");
+                    return new ShardedIndexerDatabase(shards);
+                }
+                else
+                {
+                    Console.WriteLine("Using single SQLite database...");
+                    return new DatabaseSqlite();
+                }
+            }
             else if (input.Equals("2"))
                 return new DatabasePostgres();
             Console.WriteLine("Wrong input - try again...");

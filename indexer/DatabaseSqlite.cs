@@ -11,16 +11,22 @@ namespace Indexer
 
         public DatabaseSqlite()
         {
+            InitAndReset(Paths.SQLITE_DATABASE);
+        }
 
+        // Added: constructor to target a specific DB file
+        public DatabaseSqlite(string dataSource)
+        {
+            InitAndReset(dataSource);
+        }
+
+        private void InitAndReset(string dataSource)
+        {
             var connectionStringBuilder = new SqliteConnectionStringBuilder();
-
             connectionStringBuilder.Mode = SqliteOpenMode.ReadWriteCreate;
-
-            connectionStringBuilder.DataSource = Paths.SQLITE_DATABASE;
-
+            connectionStringBuilder.DataSource = dataSource;
 
             _connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
-
             _connection.Open();
 
             Execute("DROP TABLE IF EXISTS Occ");

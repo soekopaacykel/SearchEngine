@@ -22,4 +22,10 @@ public class SearchResult
     public List<string> Ignored { get; set; }
 
     public TimeSpan TimeUsed { get; set; }
+
+    // Diagnostics: which API instance handled and how DB was used
+    public string ApiInstance { get; set; }
+    public string DatabaseMode { get; set; } // "Single" or "Sharded"
+    public List<string> ShardsUsed { get; set; } // paths or labels
+    public Dictionary<int, string> DocShard { get; set; } // docId -> shard label/path
 }

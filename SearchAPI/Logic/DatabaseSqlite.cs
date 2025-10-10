@@ -12,13 +12,19 @@ namespace Core
 
         public DatabaseSqlite()
         {
+            InitConnection(Paths.SQLITE_DATABASE);
+        }
+
+        public DatabaseSqlite(string dataSource)
+        {
+            InitConnection(dataSource);
+        }
+
+        private void InitConnection(string dataSource)
+        {
             var connectionStringBuilder = new SqliteConnectionStringBuilder();
-
-            connectionStringBuilder.DataSource = Paths.SQLITE_DATABASE;
-
-
+            connectionStringBuilder.DataSource = dataSource;
             _connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
-
             _connection.Open();
         }
 

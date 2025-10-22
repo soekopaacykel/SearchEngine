@@ -14,13 +14,22 @@ public class Program
 
         var app = builder.Build();
 
+        // Log database configuration at startup for easier troubleshooting
+        try
+        {
+            Console.WriteLine($"[SearchAPI] Using SQLite DB: {Core.Paths.SQLITE_DATABASE}");
+            Console.WriteLine($"[SearchAPI] Shard DBs: {string.Join(", ", Core.Paths.SQLITE_SHARD_DATABASES)}");
+        }
+        catch { }
+
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
             app.MapOpenApi();
         }
 
-        app.UseHttpsRedirection();
+        // Do not force HTTPS in containerized env without certificates
+        // app.UseHttpsRedirection();
 
         app.UseAuthorization();
 

@@ -19,11 +19,11 @@ app.MapControllers();
 
 // Friendly startup logs so you know what's running
 Console.WriteLine("Load Balancer starting...");
-Console.WriteLine("Backend servers:");
-Console.WriteLine("  - http://localhost:5154");
-Console.WriteLine("  - http://localhost:5155");
-Console.WriteLine("Load Balancer running on http://localhost:5000");
+var backendsEnv = Environment.GetEnvironmentVariable("BACKENDS") ?? "http://localhost:5154,http://localhost:5155";
+Console.WriteLine("Backend servers: " + backendsEnv);
+var urls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? "http://localhost:5000";
+Console.WriteLine($"Load Balancer listening on {urls}");
 Console.WriteLine("Press Ctrl+C to stop the load balancer");
 
-// Bind the app to a specific URL/port so you can call it directly
-app.Run("http://localhost:5000");
+// Let ASPNETCORE_URLS control binding (set in container to http://+:8080)
+app.Run();

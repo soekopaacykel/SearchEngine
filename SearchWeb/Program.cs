@@ -49,7 +49,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// Do not force HTTPS in container; rely on reverse proxy/ingress if needed
+// app.UseHttpsRedirection();
 
 app.UseRouting();
 

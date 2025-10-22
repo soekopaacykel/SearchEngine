@@ -19,11 +19,9 @@ namespace Loadbalencer.Controllers
     public class LoadBalancerController : ControllerBase
     {
         // Backends to forward to. You can add more URLs here.
-        private static readonly string[] BackendServers = new[]
-        {
-            "http://localhost:5154",
-            "http://localhost:5155"
-        };
+        private static readonly string[] BackendServers =
+            (Environment.GetEnvironmentVariable("BACKENDS") ?? "http://localhost:5154,http://localhost:5155")
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
         // Factory for creating HttpClient instances (recommended over new HttpClient())
         private readonly IHttpClientFactory _httpClientFactory;

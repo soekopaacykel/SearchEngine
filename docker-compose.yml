@@ -1,0 +1,91 @@
+﻿version: "3.9"
+
+services:
+  # Første SearchAPI
+  searchapi-1:
+    build:
+      context: .
+      dockerfile: SearchAPI/Dockerfile
+    image: searchengine-searchapi:latest
+    container_name: searchapi-1
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+      # Dansk kommentar: Brug kun shards, ikke den almindelige DB-fil
+      - SEARCH_SQLITE_SHARDS=/data/oleDB_shard1.db,/data/oleDB_shard2.db
+    expose:
+      - "8080"
+    ports:
+      - "5001:8080"
+    volumes:
+      # Dansk kommentar: Mount din mappe med shard-filer
+      - "C:\\Users\\cbjoe\\OneDrive\\Desktop\\skole\\oleCaseDB:/data"
+    networks:
+      - se-net
+
+  # Anden SearchAPI
+  searchapi-2:
+    build:
+      context: .
+      dockerfile: SearchAPI/Dockerfile
+    image: searchengine-searchapi:latest
+    container_name: searchapi-2
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+      - SEARCH_SQLITE_SHARDS=/data/oleDB_shard1.db,/data/oleDB_shard2.db
+    expose:
+      - "8080"
+    ports:
+      - "5002:8080"
+    volumes:
+      - "C:\\Users\\cbjoe\\OneDrive\\Desktop\\skole\\oleCaseDB:/data"
+    networks:
+      - se-net
+
+  # Load balancer
+  loadbalancer:
+    build:
+      context: .
+      dockerfile: Loadbalencer/Dockerfile
+    image: searchengine-loadbalancer:latest
+    container_name: loadbalancer
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+      - BACKENDS=http://searchapi-1:8080,http://searchapi-2:8080
+    ports:
+      - "5000:8080"
+    depends_on:
+      - searchapi-1
+      - searchapi-2
+    networks:
+      - se-net
+
+  # Web front-end
+  searchweb:
+    build:
+      context: .
+      dockerfile: SearchWeb/Dockerfile
+    image: searchengine-searchweb:latest
+    container_name: searchweb
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+      - SearchApi__BaseUrl=http://loadbalancer:8080
+    ports:
+      - "5068:8080"
+    depends_on:
+      - loadbalancer
+    networks:
+      - se-net
+
+  # Console app
+  consolesearch:
+    build:
+      context: .
+      dockerfile: ConsoleSearch/Dockerfile
+    image: searchengine-consolesearch:latest
+    container_name: consolesearch
+    networks:
+      - se-net
+
+networks:
+  se-net:
+    driver: bridge

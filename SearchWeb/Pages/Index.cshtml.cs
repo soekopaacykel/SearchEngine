@@ -29,6 +29,12 @@ public class IndexModel : PageModel
 
     public bool IsApiAvailable => _searchService.ApiIsAvailable;
 
+    public bool IsLoadBalancerAvailable => _searchService.LoadBalancerIsAvailable;
+
+    public LoadBalancerHealthStatus? LoadBalancerStatus => _searchService.LastLoadBalancerStatus;
+
+    public string LastUsedEndpoint => _searchService.LastUsedEndpoint;
+
     public string ErrorMessage { get; private set; } = string.Empty;
 
     public IndexModel(ILogger<IndexModel> logger, SearchService searchService, IConfiguration configuration)
@@ -47,6 +53,12 @@ public class IndexModel : PageModel
         if (!IsApiAvailable)
         {
             await _searchService.CheckApiHealthAsync();
+        }
+
+        // Check Load Balancer health if needed
+        if (!IsLoadBalancerAvailable)
+        {
+            await _searchService.CheckLoadBalancerHealthAsync();
         }
 
         // If user submitted a search query
@@ -111,6 +123,22 @@ public class IndexModel : PageModel
         else
         {
             TempData["ErrorMessage"] = "API is not responding. The application will run in offline mode.";
+        }
+
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostCheckLoadBalancerHealthAsync()
+    {
+        var isAvailable = await _searchService.CheckLoadBalancerHealthAsync();
+
+        if (isAvailable)
+        {
+            TempData["SuccessMessage"] = "Load Balancer is available and responding.";
+        }
+        else
+        {
+            TempData["ErrorMessage"] = "Load Balancer is not responding.";
         }
 
         return RedirectToPage();

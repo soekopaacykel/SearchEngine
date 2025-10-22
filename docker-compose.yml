@@ -76,15 +76,6 @@ services:
     networks:
       - se-net
 
-  # Console app
-  consolesearch:
-    build:
-      context: .
-      dockerfile: ConsoleSearch/Dockerfile
-    image: searchengine-consolesearch:latest
-    container_name: consolesearch
-    networks:
-      - se-net
 
 networks:
   se-net:

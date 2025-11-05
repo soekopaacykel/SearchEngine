@@ -6,8 +6,8 @@ public class Program
 {
     public static void Main(string[] args)
     {
-    // Setup NLog first
-    var logger = NLog.LogManager.GetCurrentClassLogger();
+        // Setup NLog first
+        var logger = NLog.LogManager.GetCurrentClassLogger();
         try
         {
             var builder = WebApplication.CreateBuilder(args);

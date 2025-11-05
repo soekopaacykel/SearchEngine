@@ -11,7 +11,7 @@ namespace Indexer
             
             new App().Run();
 
-            //new Renamer().Crawl(new DirectoryInfo(@"/Users/ole/data"));
+            
 
 
         }

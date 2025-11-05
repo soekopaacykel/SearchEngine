@@ -7,7 +7,6 @@ COPY Core/Core.csproj Core/
 COPY ConsoleSearch/ConsoleSearch.csproj ConsoleSearch/
 COPY indexer/indexer.csproj indexer/
 COPY SearchAPI/SearchAPI.csproj SearchAPI/
-COPY Loadbalencer/Loadbalencer.csproj Loadbalencer/
 COPY SearchWeb/SearchWeb.csproj SearchWeb/
 RUN dotnet restore ConsoleSearch/ConsoleSearch.csproj
 COPY . .

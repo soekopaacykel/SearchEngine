@@ -1,0 +1,88 @@
+# Simple SearchEngine deployment for Minikube
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: searchengine
+---
+# SearchAPI Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: searchapi
+  namespace: searchengine
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: searchapi
+  template:
+    metadata:
+      labels:
+        app: searchapi
+    spec:
+      containers:
+      - name: searchapi
+        image: searchapi:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+        env:
+        - name: ASPNETCORE_URLS
+          value: "http://+:8080"
+---
+# SearchAPI Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: searchapi
+  namespace: searchengine
+spec:
+  selector:
+    app: searchapi
+  ports:
+  - port: 5154
+    targetPort: 8080
+---
+# SearchWeb Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: searchweb
+  namespace: searchengine
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: searchweb
+  template:
+    metadata:
+      labels:
+        app: searchweb
+    spec:
+      containers:
+      - name: searchweb
+        image: searchweb:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+        env:
+        - name: ASPNETCORE_URLS
+          value: "http://+:8080"
+        - name: SearchApi__BaseUrl
+          value: "http://searchapi:5154"
+---
+# SearchWeb Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: searchweb
+  namespace: searchengine
+spec:
+  selector:
+    app: searchweb
+  ports:
+  - port: 80
+    targetPort: 8080
+    nodePort: 30080
+  type: NodePort

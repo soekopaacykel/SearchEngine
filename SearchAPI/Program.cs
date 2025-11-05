@@ -1,4 +1,5 @@
 using OpenTelemetry.Metrics;
+using OpenTelemetry.Logs;
 
 namespace SearchAPI;
 
@@ -13,7 +14,7 @@ public class Program
         // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
         builder.Services.AddOpenApi();
 
-        // Add OpenTelemetry metrics
+        // Add OpenTelemetry metrics and logging
         builder.Services.AddOpenTelemetry()
             .WithMetrics(metricsBuilder =>
             {
@@ -22,6 +23,12 @@ public class Program
                     .AddAspNetCoreInstrumentation()
                     .AddPrometheusExporter();
             });
+
+        // Configure OpenTelemetry Logging
+        builder.Logging.AddOpenTelemetry(logging =>
+        {
+            logging.AddConsoleExporter();
+        });
 
         var app = builder.Build();
 

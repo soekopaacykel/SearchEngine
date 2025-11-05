@@ -12,6 +12,8 @@ services:
       - ASPNETCORE_URLS=http://+:8080
       # Dansk kommentar: Brug kun shards, ikke den almindelige DB-fil
       - SEARCH_SQLITE_SHARDS=/data/oleDB_shard1.db,/data/oleDB_shard2.db
+      - LOKI_URL=http://loki:3100/loki/api/v1/push
+      - SERVICE_NAME=searchapi-1
     expose:
       - "8080"
     ports:
@@ -32,6 +34,8 @@ services:
     environment:
       - ASPNETCORE_URLS=http://+:8080
       - SEARCH_SQLITE_SHARDS=/data/oleDB_shard1.db,/data/oleDB_shard2.db
+      - LOKI_URL=http://loki:3100/loki/api/v1/push
+      - SERVICE_NAME=searchapi-2
     expose:
       - "8080"
     ports:
@@ -51,6 +55,8 @@ services:
     environment:
       - ASPNETCORE_URLS=http://+:8080
       - BACKENDS=http://searchapi-1:8080,http://searchapi-2:8080
+      - LOKI_URL=http://loki:3100/loki/api/v1/push
+      - SERVICE_NAME=loadbalancer
     ports:
       - "5000:8080"
     depends_on:
@@ -69,10 +75,34 @@ services:
     environment:
       - ASPNETCORE_URLS=http://+:8080
       - SearchApi__BaseUrl=http://loadbalancer:8080
+      - LOKI_URL=http://loki:3100/loki/api/v1/push
+      - SERVICE_NAME=searchweb
     ports:
       - "5068:8080"
     depends_on:
       - loadbalancer
+    networks:
+      - se-net
+
+  # Loki (logs) and Grafana (visualize)
+  loki:
+    image: grafana/loki:2.8.2
+    container_name: loki
+    command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+    networks:
+      - se-net
+
+  grafana:
+    image: grafana/grafana:10.0.0
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    ports:
+      - "3000:3000"
+    depends_on:
+      - loki
     networks:
       - se-net
 

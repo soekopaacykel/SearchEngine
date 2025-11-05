@@ -9,6 +9,9 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.2" />
         <PackageReference Include="Npgsql" Version="9.0.3" />
+        <!-- Logging: NLog + Loki target -->
+    <PackageReference Include="NLog.Web.AspNetCore" Version="5.3.0" />
+    <PackageReference Include="NLog.Targets.Loki" Version="1.2.1" />
     </ItemGroup>
 
     <ItemGroup>

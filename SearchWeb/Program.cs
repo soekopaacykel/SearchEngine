@@ -1,4 +1,11 @@
+using NLog.Web;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Setup NLog
+builder.Logging.ClearProviders();
+builder.Logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
+builder.Host.UseNLog();
 
 // Add services to the container.
 builder.Services.AddRazorPages();
@@ -14,10 +21,6 @@ builder.Services.AddScoped<SearchWeb.Services.SearchService>();
 
 // Add configuration for search API
 builder.Services.AddOptions();
-
-// Configure logging
-builder.Logging.AddConsole();
-builder.Logging.AddDebug();
 
 var app = builder.Build();
 

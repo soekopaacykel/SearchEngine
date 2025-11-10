@@ -73,7 +73,7 @@ spec:
     spec:
       containers:
       - name: searchapi
-        image: searchapi:latest
+        image: searchapi:1.0.0
         imagePullPolicy: Never
         ports:
         - containerPort: 8080
@@ -112,7 +112,7 @@ spec:
     spec:
       containers:
       - name: searchweb
-        image: searchweb:latest
+        image: searchweb:1.0.0
         imagePullPolicy: Never
         ports:
         - containerPort: 8080

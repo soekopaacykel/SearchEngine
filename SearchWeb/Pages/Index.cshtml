@@ -40,66 +40,6 @@
         </form>
     </div>
 
-    <div class="api-status mb-3 @(Model.IsLoadBalancerAvailable ? "api-online" : "api-offline")">
-        <span class="status-indicator"></span>
-        Load Balancer Status: @(Model.IsLoadBalancerAvailable ? "Online" : "Offline")
-
-        @if (Model.LoadBalancerStatus != null)
-        {
-            <span class="badge @(Model.LoadBalancerStatus.HealthyInstances == Model.LoadBalancerStatus.TotalInstances ? "bg-success" : "bg-warning")">
-                @Model.LoadBalancerStatus.HealthyInstances/@Model.LoadBalancerStatus.TotalInstances instances healthy
-            </span>
-        }
-
-        <form method="post" asp-page-handler="CheckLoadBalancerHealth" class="d-inline">
-            <button type="submit" class="btn btn-sm btn-outline-secondary">
-                Check Load Balancer Health
-            </button>
-        </form>
-
-        @if (Model.LoadBalancerStatus != null)
-        {
-            <button class="btn btn-sm btn-outline-info"
-                data-bs-toggle="collapse" data-bs-target="#loadBalancerDetails" aria-expanded="false" aria-controls="loadBalancerDetails">
-                View Details
-            </button>
-        }
-    </div>
-
-    @if (Model.LoadBalancerStatus != null)
-    {
-        <div class="collapse mb-4" id="loadBalancerDetails">
-            <div class="card card-body">
-                <h6>Load Balancer Instance Status</h6>
-                <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th>Instance URL</th>
-                                <th>Status</th>
-                                <th>Last Check</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var instance in Model.LoadBalancerStatus.Instances)
-                            {
-                                <tr class="@(instance.IsHealthy ? "table-success" : "table-danger")">
-                                    <td>@instance.BaseUrl</td>
-                                    <td>
-                                        <span class="badge @(instance.IsHealthy ? "bg-success" : "bg-danger")">
-                                            @(instance.IsHealthy ? "Healthy" : "Unhealthy")
-                                        </span>
-                                    </td>
-                                    <td>@instance.LastHealthCheck.ToString("HH:mm:ss")</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    }
-
     <div class="collapse mb-4" id="apiConfig">
         <div class="card card-body">
             <form method="post" asp-page-handler="UpdateApi">
@@ -119,7 +59,7 @@
         <div class="form-group">
             <div class="input-group mb-3">
                 <input asp-for="SearchQuery" class="form-control" placeholder="Enter search terms..." />
-                <button type="submit" class="btn btn-primary search-button" @((Model.IsApiAvailable || Model.IsLoadBalancerAvailable) ? "" : "disabled")>
+                <button type="submit" class="btn btn-primary search-button" @(Model.IsApiAvailable ? "" : "disabled")>
                     Search
                 </button>
             </div>
@@ -130,11 +70,11 @@
         </div>
     </form>
 
-    @if (!(Model.IsApiAvailable || Model.IsLoadBalancerAvailable))
+    @if (!Model.IsApiAvailable)
     {
         <div class="alert alert-warning">
             <p>
-                <strong>Both API and Load Balancer are currently unavailable.</strong> Please check the service configurations or ensure that at least one service is running.
+                <strong>Search API is currently unavailable.</strong> Please check the service configuration or ensure that the API service is running.
             </p>
         </div>
     }

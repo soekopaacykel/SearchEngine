@@ -12,9 +12,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
 WORKDIR /app
 EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
-# Configure SearchWeb to use SearchAPI directly (no load balancer)
+# Configure SearchWeb to use SearchAPI directly
 ENV SearchApi__BaseUrl=http://searchapi:5154
-# Disable load balancer by setting an unreachable URL
-ENV LoadBalancer__BaseUrl=http://disabled:9999
 COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "SearchWeb.dll"]

@@ -13,7 +13,7 @@ namespace Core
         /// <summary>
         /// Get document by its id
         /// </summary>
-        BEDocument GetDocDetails(int docId);
+        BEDocument? GetDocDetails(int docId);
 
         /// <summary>
         /// Perform the essential search for documents. It will return

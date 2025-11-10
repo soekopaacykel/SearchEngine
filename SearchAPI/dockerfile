@@ -2,11 +2,18 @@
 # Build
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
+
+# Copy solution and project files
 COPY SearchEngine.sln ./
 COPY Core/Core.csproj Core/
 COPY SearchAPI/SearchAPI.csproj SearchAPI/
 RUN dotnet restore SearchAPI/SearchAPI.csproj
-COPY . .
+
+# Copy source code
+COPY Core/ Core/
+COPY SearchAPI/ SearchAPI/
+
+# Build and publish
 RUN dotnet publish SearchAPI/SearchAPI.csproj -c Release -o /app/publish
 
 # Runtime

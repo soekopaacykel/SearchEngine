@@ -1,0 +1,387 @@
+# SearchEngine deployment with Sharded PostgreSQL for Minikube
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: searchengine
+---
+# ConfigMap for database initialization scripts
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-scripts
+  namespace: searchengine
+data:
+  init-words.sql: |
+    CREATE DATABASE search_words;
+    \c search_words;
+    CREATE TABLE word(id INTEGER PRIMARY KEY, name TEXT UNIQUE);
+    CREATE INDEX word_name_index ON word (name);
+    
+  init-documents.sql: |
+    CREATE DATABASE search_documents;
+    \c search_documents;
+    CREATE TABLE document(id INTEGER PRIMARY KEY, url TEXT, idxTime TEXT, creationTime TEXT);
+    CREATE INDEX document_url_index ON document (url);
+    
+  init-occurrences.sql: |
+    CREATE DATABASE search_occurrences;
+    \c search_occurrences;
+    CREATE TABLE occ(wordId INTEGER, docId INTEGER);
+    CREATE INDEX word_index ON occ (wordId);
+    CREATE INDEX doc_index ON occ (docId);
+---
+# PostgreSQL Words Database Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-words
+  namespace: searchengine
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-words
+  template:
+    metadata:
+      labels:
+        app: postgres-words
+        shard: words
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: "search_words"
+        - name: POSTGRES_USER
+          value: "ameliavalentin"
+        - name: POSTGRES_PASSWORD
+          value: "DBkonger1234"
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        - name: init-scripts
+          mountPath: /docker-entrypoint-initdb.d
+        readinessProbe:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - pg_isready -U ameliavalentin -d search_words
+          initialDelaySeconds: 15
+          periodSeconds: 5
+        livenessProbe:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - pg_isready -U ameliavalentin -d search_words
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: postgres-storage
+        emptyDir: {}
+      - name: init-scripts
+        configMap:
+          name: postgres-init-scripts
+          items:
+          - key: init-words.sql
+            path: init-words.sql
+---
+# PostgreSQL Words Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-words
+  namespace: searchengine
+spec:
+  selector:
+    app: postgres-words
+  ports:
+  - port: 5432
+    targetPort: 5432
+---
+# PostgreSQL Documents Database Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-documents
+  namespace: searchengine
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-documents
+  template:
+    metadata:
+      labels:
+        app: postgres-documents
+        shard: documents
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: "search_documents"
+        - name: POSTGRES_USER
+          value: "ameliavalentin"
+        - name: POSTGRES_PASSWORD
+          value: "DBkonger1234"
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        - name: init-scripts
+          mountPath: /docker-entrypoint-initdb.d
+        readinessProbe:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - pg_isready -U ameliavalentin -d search_documents
+          initialDelaySeconds: 15
+          periodSeconds: 5
+        livenessProbe:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - pg_isready -U ameliavalentin -d search_documents
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: postgres-storage
+        emptyDir: {}
+      - name: init-scripts
+        configMap:
+          name: postgres-init-scripts
+          items:
+          - key: init-documents.sql
+            path: init-documents.sql
+---
+# PostgreSQL Documents Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-documents
+  namespace: searchengine
+spec:
+  selector:
+    app: postgres-documents
+  ports:
+  - port: 5432
+    targetPort: 5432
+---
+# PostgreSQL Occurrences Database Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-occurrences
+  namespace: searchengine
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-occurrences
+  template:
+    metadata:
+      labels:
+        app: postgres-occurrences
+        shard: occurrences
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: "search_occurrences"
+        - name: POSTGRES_USER
+          value: "ameliavalentin"
+        - name: POSTGRES_PASSWORD
+          value: "DBkonger1234"
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        - name: init-scripts
+          mountPath: /docker-entrypoint-initdb.d
+        readinessProbe:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - pg_isready -U ameliavalentin -d search_occurrences
+          initialDelaySeconds: 15
+          periodSeconds: 5
+        livenessProbe:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - pg_isready -U ameliavalentin -d search_occurrences
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: postgres-storage
+        emptyDir: {}
+      - name: init-scripts
+        configMap:
+          name: postgres-init-scripts
+          items:
+          - key: init-occurrences.sql
+            path: init-occurrences.sql
+---
+# PostgreSQL Occurrences Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-occurrences
+  namespace: searchengine
+spec:
+  selector:
+    app: postgres-occurrences
+  ports:
+  - port: 5432
+    targetPort: 5432
+---
+# SearchAPI Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: searchapi
+  namespace: searchengine
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: searchapi
+  template:
+    metadata:
+      labels:
+        app: searchapi
+    spec:
+      containers:
+      - name: searchapi
+        image: searchapi:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+        env:
+        - name: ASPNETCORE_URLS
+          value: "http://+:8080"
+---
+# SearchAPI Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: searchapi
+  namespace: searchengine
+spec:
+  selector:
+    app: searchapi
+  ports:
+  - port: 5154
+    targetPort: 8080
+---
+# SearchWeb Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: searchweb
+  namespace: searchengine
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: searchweb
+  template:
+    metadata:
+      labels:
+        app: searchweb
+    spec:
+      containers:
+      - name: searchweb
+        image: searchweb:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+        env:
+        - name: ASPNETCORE_URLS
+          value: "http://+:8080"
+        - name: SearchApi__BaseUrl
+          value: "http://searchapi:5154"
+---
+# SearchWeb Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: searchweb
+  namespace: searchengine
+spec:
+  selector:
+    app: searchweb
+  ports:
+  - port: 80
+    targetPort: 8080
+    nodePort: 30080
+  type: NodePort
+---
+# Indexer Job (runs once to populate databases)
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: indexer-job
+  namespace: searchengine
+spec:
+  template:
+    metadata:
+      labels:
+        app: indexer
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: indexer
+        image: indexer:latest
+        imagePullPolicy: Never
+        env:
+        - name: DOTNET_ENVIRONMENT
+          value: "Production"
+        - name: INDEX_PATH
+          value: "/app/data"
+        command: ["/bin/sh"]
+        args: 
+          - -c
+          - |
+            # Create test data directory and some sample files
+            mkdir -p /app/data
+            echo "This is a sample document about search engines and databases." > /app/data/doc1.txt
+            echo "Databases are essential for storing and retrieving information efficiently." > /app/data/doc2.txt
+            echo "Search engines use advanced algorithms to index and search through documents." > /app/data/doc3.txt
+            echo "Kubernetes provides container orchestration for scalable applications." > /app/data/doc4.txt
+            echo "PostgreSQL is a powerful relational database management system." > /app/data/doc5.txt
+            
+            # Run the indexer
+            dotnet indexer.dll
+      # This job will run after databases are ready
+      initContainers:
+      - name: wait-for-postgres-words
+        image: postgres:15
+        command: ['sh', '-c', 'until pg_isready -h postgres-words -p 5432 -U ameliavalentin; do echo waiting for postgres-words; sleep 2; done;']
+      - name: wait-for-postgres-documents
+        image: postgres:15
+        command: ['sh', '-c', 'until pg_isready -h postgres-documents -p 5432 -U ameliavalentin; do echo waiting for postgres-documents; sleep 2; done;']
+      - name: wait-for-postgres-occurrences
+        image: postgres:15
+        command: ['sh', '-c', 'until pg_isready -h postgres-occurrences -p 5432 -U ameliavalentin; do echo waiting for postgres-occurrences; sleep 2; done;']

@@ -79,7 +79,7 @@ public class SearchController : ControllerBase
         return Ok(new { caseSensitive = caseSensitive });
     }
 
-    [HttpGet]
+        [HttpGet]
     [Route("ping")]
     public string? Ping()
     {
@@ -87,5 +87,4 @@ public class SearchController : ControllerBase
         _pingRequestsCounter.Add(1);
         return "searchAPI";
     }
-    
 }

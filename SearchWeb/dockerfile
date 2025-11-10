@@ -1,11 +1,18 @@
 # SearchWeb Dockerfile
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
+
+# Copy solution and project files
 COPY SearchEngine.sln ./
 COPY Core/Core.csproj Core/
 COPY SearchWeb/SearchWeb.csproj SearchWeb/
 RUN dotnet restore SearchWeb/SearchWeb.csproj
-COPY . .
+
+# Copy source code
+COPY Core/ Core/
+COPY SearchWeb/ SearchWeb/
+
+# Build and publish
 RUN dotnet publish SearchWeb/SearchWeb.csproj -c Release -o /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final

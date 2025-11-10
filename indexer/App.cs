@@ -34,6 +34,25 @@ namespace Indexer
             }
             Console.WriteLine($"Total number of word occurrences: {totalOccurrences}");
 
+            // Check if running in Kubernetes
+            string kubernetesServiceHost = Environment.GetEnvironmentVariable("KUBERNETES_SERVICE_HOST");
+            
+            if (!string.IsNullOrEmpty(kubernetesServiceHost))
+            {
+                // Non-interactive mode - show top 10 words
+                int topWords = 10;
+                var sorted = all.OrderByDescending(p => p.Value);
+                Console.WriteLine($"The top {topWords} words are:");
+                int shown = 0;
+                foreach (var p in sorted)
+                {
+                    Console.WriteLine($"<{p.Key}> - {p.Value}");
+                    shown++;
+                    if (shown >= topWords) break;
+                }
+                return; // Exit early in non-interactive mode
+            }
+
             Console.Write("How many top words would you like to see? ");
             if (int.TryParse(Console.ReadLine(), out int topN))
             {
@@ -58,11 +77,22 @@ namespace Indexer
 
         private IDatabase GetDatabase()
         {
+            // Check if running in Kubernetes (environment variable is typically set)
+            string kubernetesServiceHost = Environment.GetEnvironmentVariable("KUBERNETES_SERVICE_HOST");
+            
+            if (!string.IsNullOrEmpty(kubernetesServiceHost))
+            {
+                // Running in Kubernetes - use PostgreSQL automatically
+                Console.WriteLine("Running in Kubernetes environment - using PostgreSQL database");
+                return new DatabasePostgres();
+            }
+            
+            // Interactive mode for local development
             Console.Write("Use SQLite (1) or Postgres (2) database?");
             string input = Console.ReadLine();
-            if (input.Equals("1"))
+            if (input?.Equals("1") == true)
                 return new DatabaseSqlite();
-            else if (input.Equals("2"))
+            else if (input?.Equals("2") == true)
                 return new DatabasePostgres();
             Console.WriteLine("Wrong input - try again...");
             return GetDatabase();

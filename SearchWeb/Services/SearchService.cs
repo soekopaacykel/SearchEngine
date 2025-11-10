@@ -46,6 +46,9 @@ namespace SearchWeb.Services
                 if (_apiIsAvailable)
                 {
                     _logger.LogInformation("API is available.");
+                    
+                    // Also check database shard health
+                    await CheckDatabaseHealthAsync();
                 }
                 else
                 {
@@ -59,6 +62,45 @@ namespace SearchWeb.Services
                 _apiIsAvailable = false;
                 _logger.LogError(ex, $"API health check failed: {ex.Message}");
                 return false;
+            }
+        }
+
+        private async Task CheckDatabaseHealthAsync()
+        {
+            try
+            {
+                _logger.LogInformation($"Checking database shard health at: {_baseUrl}/api/health");
+                var response = await _httpClient.GetAsync($"{_baseUrl}/api/health");
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    var healthData = JsonSerializer.Deserialize<JsonElement>(content, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (healthData.TryGetProperty("IsHealthy", out var isHealthyProperty))
+                    {
+                        var isHealthy = isHealthyProperty.GetBoolean();
+                        if (isHealthy)
+                        {
+                            _logger.LogInformation("All database shards are healthy.");
+                        }
+                        else
+                        {
+                            _logger.LogWarning("Some database shards are unhealthy.");
+                        }
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning($"Database health check returned status: {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Database health check failed, but API is still available");
             }
         }
 

@@ -24,20 +24,40 @@
         </div>
     }
 
-    <div class="api-status mb-3 @(Model.IsApiAvailable ? "api-online" : "api-offline")">
-        <span class="status-indicator"></span>
-        API Status: @(Model.IsApiAvailable ? "Online" : "Offline")
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="api-status @(Model.IsApiAvailable ? "api-online" : "api-offline")">
+                <span class="status-indicator"></span>
+                API Status: @(Model.IsApiAvailable ? "Online" : "Offline")
 
-        <button class="btn btn-sm @(Model.IsApiAvailable ? "btn-outline-success" : "btn-outline-warning")"
-            data-bs-toggle="collapse" data-bs-target="#apiConfig" aria-expanded="false" aria-controls="apiConfig">
-            Configure API
-        </button>
+                <button class="btn btn-sm @(Model.IsApiAvailable ? "btn-outline-success" : "btn-outline-warning")"
+                    data-bs-toggle="collapse" data-bs-target="#apiConfig" aria-expanded="false" aria-controls="apiConfig">
+                    Configure API
+                </button>
 
-        <form method="post" asp-page-handler="CheckHealth" class="d-inline">
-            <button type="submit" class="btn btn-sm btn-outline-secondary">
-                Check API Health
-            </button>
-        </form>
+                <form method="post" asp-page-handler="CheckHealth" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        Check API Health
+                    </button>
+                </form>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="db-status @(Model.DatabaseHealthy ? "db-online" : "db-offline")">
+                <span class="status-indicator"></span>
+                Database: @(Model.DatabaseHealthy ? $"{Model.HealthyShards}/{Model.TotalShards} shards healthy" : "Issues detected")
+
+                <form method="post" asp-page-handler="CheckDatabaseHealth" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-info">
+                        Check DB Health
+                    </button>
+                </form>
+
+                <a href="/DatabaseHealth" class="btn btn-sm btn-outline-primary">
+                    Details
+                </a>
+            </div>
+        </div>
     </div>
 
     <div class="collapse mb-4" id="apiConfig">

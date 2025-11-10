@@ -9,7 +9,7 @@ namespace SearchAPI.Controllers;
 [Route("api")]
 public class SearchController : ControllerBase
 {
-    private static IDatabase mDatabase = new DatabaseSqlite();
+    private static IDatabase mDatabase = new DatabasePostgres();
     private static SearchLogic mSearchLogic = new SearchLogic(mDatabase);
     private readonly ILogger<SearchController> _logger;
     

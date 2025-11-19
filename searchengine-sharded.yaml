@@ -31,6 +31,96 @@ data:
     CREATE INDEX word_index ON occ (wordId);
     CREATE INDEX doc_index ON occ (docId);
 ---
+# PostgreSQL Words Persistent Volume
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-words-pv
+  namespace: searchengine
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath:
+    path: /data/postgres-words
+---
+# PostgreSQL Words Persistent Volume Claim
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-words-pvc
+  namespace: searchengine
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: manual
+---
+# PostgreSQL Documents Persistent Volume
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-documents-pv
+  namespace: searchengine
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath:
+    path: /data/postgres-documents
+---
+# PostgreSQL Documents Persistent Volume Claim
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-documents-pvc
+  namespace: searchengine
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: manual
+---
+# PostgreSQL Occurrences Persistent Volume
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-occurrences-pv
+  namespace: searchengine
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath:
+    path: /data/postgres-occurrences
+---
+# PostgreSQL Occurrences Persistent Volume Claim
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-occurrences-pvc
+  namespace: searchengine
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: manual
+---
 # PostgreSQL Words Database Deployment
 apiVersion: apps/v1
 kind: Deployment
@@ -85,7 +175,8 @@ spec:
           periodSeconds: 10
       volumes:
       - name: postgres-storage
-        emptyDir: {}
+        persistentVolumeClaim:
+          claimName: postgres-words-pvc
       - name: init-scripts
         configMap:
           name: postgres-init-scripts
@@ -160,7 +251,8 @@ spec:
           periodSeconds: 10
       volumes:
       - name: postgres-storage
-        emptyDir: {}
+        persistentVolumeClaim:
+          claimName: postgres-documents-pvc
       - name: init-scripts
         configMap:
           name: postgres-init-scripts
@@ -235,7 +327,8 @@ spec:
           periodSeconds: 10
       volumes:
       - name: postgres-storage
-        emptyDir: {}
+        persistentVolumeClaim:
+          claimName: postgres-occurrences-pvc
       - name: init-scripts
         configMap:
           name: postgres-init-scripts
@@ -360,20 +453,20 @@ spec:
           value: "Production"
         - name: INDEX_PATH
           value: "/app/data"
+        volumeMounts:
+        - name: data-volume
+          mountPath: /app/data
         command: ["/bin/sh"]
         args: 
           - -c
           - |
-            # Create test data directory and some sample files
-            mkdir -p /app/data
-            echo "This is a sample document about search engines and databases." > /app/data/doc1.txt
-            echo "Databases are essential for storing and retrieving information efficiently." > /app/data/doc2.txt
-            echo "Search engines use advanced algorithms to index and search through documents." > /app/data/doc3.txt
-            echo "Kubernetes provides container orchestration for scalable applications." > /app/data/doc4.txt
-            echo "PostgreSQL is a powerful relational database management system." > /app/data/doc5.txt
-            
-            # Run the indexer
+            # Run the indexer on the mounted real data
             dotnet indexer.dll
+      volumes:
+      - name: data-volume
+        hostPath:
+          path: /data/medium
+          type: Directory
       # This job will run after databases are ready
       initContainers:
       - name: wait-for-postgres-words

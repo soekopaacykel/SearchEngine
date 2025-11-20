@@ -368,7 +368,7 @@ spec:
       containers:
       - name: searchapi
         image: searchapi:latest
-        imagePullPolicy: Never
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
         env:
@@ -407,7 +407,7 @@ spec:
       containers:
       - name: searchweb
         image: searchweb:latest
-        imagePullPolicy: Never
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
         env:
@@ -446,8 +446,8 @@ spec:
       restartPolicy: OnFailure
       containers:
       - name: indexer
-        image: indexer:latest
-        imagePullPolicy: Never
+        image: cbjoedstrup/indexer:latest
+        imagePullPolicy: IfNotPresent
         env:
         - name: DOTNET_ENVIRONMENT
           value: "Production"

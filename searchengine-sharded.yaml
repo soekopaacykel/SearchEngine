@@ -367,7 +367,7 @@ spec:
     spec:
       containers:
       - name: searchapi
-        image: searchapi:latest
+        image: cbjoedstrup/searchapi:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
@@ -406,7 +406,7 @@ spec:
     spec:
       containers:
       - name: searchweb
-        image: searchweb:latest
+        image: cbjoedstrup/searchweb:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080

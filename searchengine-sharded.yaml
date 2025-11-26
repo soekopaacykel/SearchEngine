@@ -128,7 +128,7 @@ metadata:
   name: postgres-words
   namespace: searchengine
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: postgres-words
@@ -204,7 +204,7 @@ metadata:
   name: postgres-documents
   namespace: searchengine
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: postgres-documents
@@ -280,7 +280,7 @@ metadata:
   name: postgres-occurrences
   namespace: searchengine
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: postgres-occurrences

@@ -1,16 +1,64 @@
-# Simple SearchEngine deployment for Minikube
+# Simple SearchEngine deployment for Minikube with monolithic database
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: searchengine
+  name: searchengine-mono
+---
+# ConfigMap for database initialization script
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-script
+  namespace: searchengine-mono
+data:
+  init-db.sql: |
+    CREATE DATABASE search;
+    \c search;
+    CREATE TABLE word(id INTEGER PRIMARY KEY, name TEXT UNIQUE);
+    CREATE INDEX word_name_index ON word (name);
+    CREATE TABLE document(id INTEGER PRIMARY KEY, url TEXT, idxTime TEXT, creationTime TEXT);
+    CREATE INDEX document_url_index ON document (url);
+    CREATE TABLE occ(wordId INTEGER, docId INTEGER);
+    CREATE INDEX word_index ON occ (wordId);
+    CREATE INDEX doc_index ON occ (docId);
+---
+# PostgreSQL Persistent Volume
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-pv
+  namespace: searchengine-mono
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath:
+    path: /data/postgres
+---
+# PostgreSQL Persistent Volume Claim
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: searchengine-mono
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: manual
 ---
 # PostgreSQL Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres
-  namespace: searchengine
+  namespace: searchengine-mono
 spec:
   replicas: 1
   selector:
@@ -38,16 +86,41 @@ spec:
         volumeMounts:
         - name: postgres-storage
           mountPath: /var/lib/postgresql/data
+        - name: init-script
+          mountPath: /docker-entrypoint-initdb.d
+        readinessProbe:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - pg_isready -U ameliavalentin -d search
+          initialDelaySeconds: 15
+          periodSeconds: 5
+        livenessProbe:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - pg_isready -U ameliavalentin -d search
+          initialDelaySeconds: 30
+          periodSeconds: 10
       volumes:
       - name: postgres-storage
-        emptyDir: {}
+        persistentVolumeClaim:
+          claimName: postgres-pvc
+      - name: init-script
+        configMap:
+          name: postgres-init-script
+          items:
+          - key: init-db.sql
+            path: init-db.sql
 ---
 # PostgreSQL Service
 apiVersion: v1
 kind: Service
 metadata:
   name: postgres
-  namespace: searchengine
+  namespace: searchengine-mono
 spec:
   selector:
     app: postgres
@@ -60,7 +133,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: searchapi
-  namespace: searchengine
+  namespace: searchengine-mono
 spec:
   replicas: 1
   selector:
@@ -73,8 +146,8 @@ spec:
     spec:
       containers:
       - name: searchapi
-        image: searchapi:latest
-        imagePullPolicy: Never
+        image: cbjoedstrup/searchapi:latest
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
         env:
@@ -86,7 +159,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: searchapi
-  namespace: searchengine
+  namespace: searchengine-mono
 spec:
   selector:
     app: searchapi
@@ -99,7 +172,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: searchweb
-  namespace: searchengine
+  namespace: searchengine-mono
 spec:
   replicas: 1
   selector:
@@ -112,8 +185,8 @@ spec:
     spec:
       containers:
       - name: searchweb
-        image: searchweb:latest
-        imagePullPolicy: Never
+        image: cbjoedstrup/searchweb:latest
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
         env:
@@ -127,12 +200,54 @@ apiVersion: v1
 kind: Service
 metadata:
   name: searchweb
-  namespace: searchengine
+  namespace: searchengine-mono
 spec:
   selector:
     app: searchweb
   ports:
   - port: 80
     targetPort: 8080
-    nodePort: 30080
+    nodePort: 30081
   type: NodePort
+---
+# Indexer Job (runs once to populate database)
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: indexer-job
+  namespace: searchengine-mono
+spec:
+  template:
+    metadata:
+      labels:
+        app: indexer
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: indexer
+        image: cbjoedstrup/indexer-mono:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: DOTNET_ENVIRONMENT
+          value: "Production"
+        - name: INDEX_PATH
+          value: "/app/data"
+        volumeMounts:
+        - name: data-volume
+          mountPath: /app/data
+        command: ["/bin/sh"]
+        args: 
+          - -c
+          - |
+            # Run the indexer on the mounted real data
+            dotnet indexer.dll
+      volumes:
+      - name: data-volume
+        hostPath:
+          path: /data/medium
+          type: Directory
+      # This job will run after database is ready
+      initContainers:
+      - name: wait-for-postgres
+        image: postgres:15
+        command: ['sh', '-c', 'until pg_isready -h postgres -p 5432 -U ameliavalentin; do echo waiting for postgres; sleep 2; done;']

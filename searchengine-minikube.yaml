@@ -1,8 +1,10 @@
 # Simple SearchEngine deployment for Minikube
+# Simple SearchEngine deployment for Minikube
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
+  name: searchengine
   name: searchengine
 ---
 # PostgreSQL Deployment
@@ -10,6 +12,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres
+  namespace: searchengine
+  
   namespace: searchengine
   
 spec:

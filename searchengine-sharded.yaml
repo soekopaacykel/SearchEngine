@@ -204,7 +204,7 @@ metadata:
   name: postgres-documents
   namespace: searchengine
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: postgres-documents
@@ -280,7 +280,7 @@ metadata:
   name: postgres-occurrences
   namespace: searchengine
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: postgres-occurrences
@@ -356,7 +356,7 @@ metadata:
   name: searchapi
   namespace: searchengine
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: searchapi
@@ -395,7 +395,7 @@ metadata:
   name: searchweb
   namespace: searchengine
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: searchweb
@@ -447,12 +447,12 @@ spec:
       containers:
       - name: indexer
         image: soekopaacykel/indexer:latest
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         env:
         - name: DOTNET_ENVIRONMENT
           value: "Production"
         - name: INDEX_PATH
-          value: "/app/data"
+          value: "/app/data/large"
         volumeMounts:
         - name: data-volume
           mountPath: /app/data

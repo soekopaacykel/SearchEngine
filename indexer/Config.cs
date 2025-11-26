@@ -15,8 +15,8 @@ public class Config
             
             if (!string.IsNullOrEmpty(kubernetesServiceHost))
             {
-                // Running in Kubernetes - use a default path or environment variable
-                string indexPath = Environment.GetEnvironmentVariable("INDEX_PATH") ?? "/app/data";
+                // Running in Kubernetes - use large directory
+                string indexPath = Environment.GetEnvironmentVariable("INDEX_PATH") ?? "/app/data/large";
                 return indexPath;
             }
             

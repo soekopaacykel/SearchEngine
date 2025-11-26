@@ -38,7 +38,12 @@ public class Program
             app.MapOpenApi();
         }
 
-        app.UseHttpsRedirection();
+        // In Kubernetes we only expose HTTP (no TLS termination in the pod). Avoid forcing
+        // HTTPS redirects which break health checks and Prometheus scrapes.
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseHttpsRedirection();
+        }
         app.UseAuthorization();
 
         // Add Prometheus metrics endpoint

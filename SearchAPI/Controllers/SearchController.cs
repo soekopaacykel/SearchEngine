@@ -2,6 +2,7 @@ using Core;
 using Microsoft.AspNetCore.Mvc;
 using SearchAPI.Logic;
 using System.Diagnostics.Metrics;
+using System.Diagnostics;
 
 namespace SearchAPI.Controllers;
 
@@ -21,6 +22,15 @@ public class SearchController : ControllerBase
         _meter.CreateCounter<int>("search_results_total", "count", "Total number of search results returned");
     private static readonly Counter<int> _pingRequestsCounter = 
         _meter.CreateCounter<int>("ping_requests_total", "count", "Total number of ping requests");
+    private static readonly Histogram<double> _searchLatencyMs =
+        _meter.CreateHistogram<double>("search_latency_ms", unit: "ms", description: "End-to-end search latency in milliseconds");
+    private static readonly Counter<int> _searchErrorsCounter =
+        _meter.CreateCounter<int>("search_errors_total", unit: "count", description: "Total number of failed search requests");
+
+    // Labels to compare monolith vs X- and Y-sharded setups
+    private static readonly string DbMode = Environment.GetEnvironmentVariable("DATABASE_MODE") ?? "unknown"; // monolith|x-sharded|y-sharded
+    private static readonly string ShardsX = Environment.GetEnvironmentVariable("SHARDS_X") ?? "0"; // horizontal shards count
+    private static readonly string ShardsY = Environment.GetEnvironmentVariable("SHARDS_Y") ?? "0"; // vertical split parts
 
     public SearchController(ILogger<SearchController> logger)
     {
@@ -32,15 +42,44 @@ public class SearchController : ControllerBase
     public SearchResult Search(string query, int maxAmount)
     {
         _logger.LogInformation("Search request received: Query={Query}, MaxAmount={MaxAmount}", query, maxAmount);
-        _searchRequestsCounter.Add(1);
-        
-        var result = mSearchLogic.Search(query.Split(","), maxAmount);
-        
-        _logger.LogInformation("Search completed: Query={Query}, ResultCount={ResultCount}, TimeUsed={TimeUsed}ms", 
-            query, result.DocumentHits.Count, result.TimeUsed.TotalMilliseconds);
-        _searchResultsCounter.Add(result.DocumentHits.Count);
-        
-        return result;
+        _searchRequestsCounter.Add(1, new KeyValuePair<string, object?>("db_mode", DbMode),
+                                      new KeyValuePair<string, object?>("shards_x", ShardsX),
+                                      new KeyValuePair<string, object?>("shards_y", ShardsY));
+
+        var sw = Stopwatch.StartNew();
+        try
+        {
+            var result = mSearchLogic.Search(query.Split(","), maxAmount);
+            sw.Stop();
+
+            _searchLatencyMs.Record(sw.Elapsed.TotalMilliseconds,
+                new KeyValuePair<string, object?>("db_mode", DbMode),
+                new KeyValuePair<string, object?>("shards_x", ShardsX),
+                new KeyValuePair<string, object?>("shards_y", ShardsY));
+
+            _logger.LogInformation("Search completed: Query={Query}, ResultCount={ResultCount}, TimeUsed={TimeUsed}ms",
+                query, result.DocumentHits.Count, result.TimeUsed.TotalMilliseconds);
+            _searchResultsCounter.Add(result.DocumentHits.Count,
+                new KeyValuePair<string, object?>("db_mode", DbMode),
+                new KeyValuePair<string, object?>("shards_x", ShardsX),
+                new KeyValuePair<string, object?>("shards_y", ShardsY));
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            sw.Stop();
+            _searchErrorsCounter.Add(1,
+                new KeyValuePair<string, object?>("db_mode", DbMode),
+                new KeyValuePair<string, object?>("shards_x", ShardsX),
+                new KeyValuePair<string, object?>("shards_y", ShardsY));
+            _searchLatencyMs.Record(sw.Elapsed.TotalMilliseconds,
+                new KeyValuePair<string, object?>("db_mode", DbMode),
+                new KeyValuePair<string, object?>("shards_x", ShardsX),
+                new KeyValuePair<string, object?>("shards_y", ShardsY));
+            _logger.LogError(ex, "Search failed for Query={Query}", query);
+            throw;
+        }
     }
 
     [HttpGet]
@@ -49,16 +88,44 @@ public class SearchController : ControllerBase
     {
         _logger.LogInformation("Search request received: Query={Query}, MaxAmount={MaxAmount}, CaseSensitive={CaseSensitive}", 
             query, maxAmount, caseSensitive);
-        _searchRequestsCounter.Add(1);
-        
+        _searchRequestsCounter.Add(1, new KeyValuePair<string, object?>("db_mode", DbMode),
+                                      new KeyValuePair<string, object?>("shards_x", ShardsX),
+                                      new KeyValuePair<string, object?>("shards_y", ShardsY));
         mSearchLogic.SetCaseSensitivity(caseSensitive);
-        var result = mSearchLogic.Search(query.Split(","), maxAmount);
-        
-        _logger.LogInformation("Search completed: Query={Query}, ResultCount={ResultCount}, TimeUsed={TimeUsed}ms", 
-            query, result.DocumentHits.Count, result.TimeUsed.TotalMilliseconds);
-        _searchResultsCounter.Add(result.DocumentHits.Count);
-        
-        return result;
+        var sw = Stopwatch.StartNew();
+        try
+        {
+            var result = mSearchLogic.Search(query.Split(","), maxAmount);
+            sw.Stop();
+
+            _searchLatencyMs.Record(sw.Elapsed.TotalMilliseconds,
+                new KeyValuePair<string, object?>("db_mode", DbMode),
+                new KeyValuePair<string, object?>("shards_x", ShardsX),
+                new KeyValuePair<string, object?>("shards_y", ShardsY));
+
+            _logger.LogInformation("Search completed: Query={Query}, ResultCount={ResultCount}, TimeUsed={TimeUsed}ms",
+                query, result.DocumentHits.Count, result.TimeUsed.TotalMilliseconds);
+            _searchResultsCounter.Add(result.DocumentHits.Count,
+                new KeyValuePair<string, object?>("db_mode", DbMode),
+                new KeyValuePair<string, object?>("shards_x", ShardsX),
+                new KeyValuePair<string, object?>("shards_y", ShardsY));
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            sw.Stop();
+            _searchErrorsCounter.Add(1,
+                new KeyValuePair<string, object?>("db_mode", DbMode),
+                new KeyValuePair<string, object?>("shards_x", ShardsX),
+                new KeyValuePair<string, object?>("shards_y", ShardsY));
+            _searchLatencyMs.Record(sw.Elapsed.TotalMilliseconds,
+                new KeyValuePair<string, object?>("db_mode", DbMode),
+                new KeyValuePair<string, object?>("shards_x", ShardsX),
+                new KeyValuePair<string, object?>("shards_y", ShardsY));
+            _logger.LogError(ex, "Search failed for Query={Query}", query);
+            throw;
+        }
     }
 
     [HttpPost]

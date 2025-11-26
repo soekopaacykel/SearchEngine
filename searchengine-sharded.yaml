@@ -381,11 +381,18 @@ kind: Service
 metadata:
   name: searchapi
   namespace: searchengine
+  labels:
+    app: searchapi
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "/metrics"
+    prometheus.io/port: "8080"
 spec:
   selector:
     app: searchapi
   ports:
-  - port: 5154
+  - name: http
+    port: 5154
     targetPort: 8080
 ---
 # SearchWeb Deployment
@@ -478,3 +485,122 @@ spec:
       - name: wait-for-postgres-occurrences
         image: postgres:15
         command: ['sh', '-c', 'until pg_isready -h postgres-occurrences -p 5432 -U ameliavalentin; do echo waiting for postgres-occurrences; sleep 2; done;']
+---
+# ServiceMonitor for Prometheus Operator (kube-prometheus-stack)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: searchapi-servicemonitor
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: searchapi
+  namespaceSelector:
+    matchNames:
+      - searchengine
+  endpoints:
+    - port: http
+      path: /metrics
+      scheme: http
+      interval: 15s
+      scrapeTimeout: 10s
+---
+# Grafana datasource for Prometheus (kube-prometheus-stack)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasource-prometheus
+  namespace: monitoring
+  labels:
+    grafana_datasource: "1"
+data:
+  prometheus-datasource.yaml: |
+    apiVersion: 1
+    datasources:
+    - name: Prometheus
+      type: prometheus
+      access: proxy
+      isDefault: true
+      url: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+      editable: true
+---
+# Minimal ASP.NET Core dashboard example (works with Prometheus Operator labels)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-searchapi
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  searchapi-dashboard.json: |
+    {
+      "__inputs": [],
+      "__requires": [
+        { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0" },
+        { "type": "panel", "id": "timeseries", "name": "Time series", "version": "10.0.0" },
+        { "type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0" }
+      ],
+      "title": "SearchAPI - Health & Scrape",
+      "uid": "searchapi-health",
+      "timezone": "browser",
+      "schemaVersion": 38,
+      "version": 1,
+      "refresh": "10s",
+      "panels": [
+        {
+          "type": "stat",
+          "title": "SearchAPI Up",
+          "id": 1,
+          "gridPos": { "h": 6, "w": 8, "x": 0, "y": 0 },
+          "options": {
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "orientation": "horizontal",
+            "textMode": "value"
+          },
+          "targets": [
+            {
+              "expr": "max(up{namespace=\"searchengine\", service=\"searchapi\"})",
+              "legendFormat": "up",
+              "refId": "A"
+            }
+          ],
+          "datasource": { "type": "prometheus", "uid": "Prometheus" }
+        },
+        {
+          "type": "timeseries",
+          "title": "Scrape duration (searchapi)",
+          "id": 2,
+          "gridPos": { "h": 8, "w": 12, "x": 8, "y": 0 },
+          "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+          "targets": [
+            {
+              "expr": "avg(scrape_duration_seconds{job=~\".*searchapi.*\"})",
+              "legendFormat": "{{job}}",
+              "refId": "A"
+            }
+          ],
+          "datasource": { "type": "prometheus", "uid": "Prometheus" }
+        },
+        {
+          "type": "timeseries",
+          "title": "Samples scraped (searchapi)",
+          "id": 3,
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+          "targets": [
+            {
+              "expr": "avg(scrape_samples_post_metric_relabeling{job=~\".*searchapi.*\"})",
+              "legendFormat": "{{job}}",
+              "refId": "A"
+            }
+          ],
+          "datasource": { "type": "prometheus", "uid": "Prometheus" }
+        }
+      ]
+    }

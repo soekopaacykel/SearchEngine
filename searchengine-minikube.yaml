@@ -225,13 +225,15 @@ spec:
       restartPolicy: OnFailure
       containers:
       - name: indexer
-        image: cbjoedstrup/indexer-mono:latest
+        image: soekopaacykel/indexer:latest
         imagePullPolicy: IfNotPresent
         env:
         - name: DOTNET_ENVIRONMENT
           value: "Production"
         - name: INDEX_PATH
           value: "/app/data"
+        - name: DATABASE_TYPE
+          value: "mono"
         volumeMounts:
         - name: data-volume
           mountPath: /app/data

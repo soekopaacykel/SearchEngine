@@ -128,7 +128,7 @@ metadata:
   name: postgres-words
   namespace: searchengine
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
       app: postgres-words
@@ -204,7 +204,7 @@ metadata:
   name: postgres-documents
   namespace: searchengine
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
       app: postgres-documents
@@ -280,7 +280,7 @@ metadata:
   name: postgres-occurrences
   namespace: searchengine
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
       app: postgres-occurrences
@@ -356,7 +356,7 @@ metadata:
   name: searchapi
   namespace: searchengine
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: searchapi
@@ -395,7 +395,7 @@ metadata:
   name: searchweb
   namespace: searchengine
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: searchweb
@@ -446,7 +446,7 @@ spec:
       restartPolicy: OnFailure
       containers:
       - name: indexer
-        image: cbjoedstrup/indexer:latest
+        image: soekopaacykel/indexer:latest
         imagePullPolicy: IfNotPresent
         env:
         - name: DOTNET_ENVIRONMENT

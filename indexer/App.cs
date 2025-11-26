@@ -82,9 +82,36 @@ namespace Indexer
             
             if (!string.IsNullOrEmpty(kubernetesServiceHost))
             {
-                // Running in Kubernetes - use PostgreSQL automatically
-                Console.WriteLine("Running in Kubernetes environment - using PostgreSQL database");
-                return new DatabasePostgres();
+                // Check if we're in the mono environment (single database setup)
+                string databaseType = Environment.GetEnvironmentVariable("DATABASE_TYPE");
+                string kubernetesNamespace = Environment.GetEnvironmentVariable("KUBERNETES_NAMESPACE") ?? "default";
+                
+                Console.WriteLine($"Database type environment variable: '{databaseType}'");
+                Console.WriteLine($"Kubernetes namespace: '{kubernetesNamespace}'");
+                
+                // Auto-detect based on namespace if DATABASE_TYPE is not set
+                if (string.IsNullOrEmpty(databaseType))
+                {
+                    if (kubernetesNamespace.Contains("mono"))
+                    {
+                        databaseType = "mono";
+                    }
+                    else if (kubernetesNamespace.Contains("searchengine"))
+                    {
+                        databaseType = "sharded";
+                    }
+                }
+                
+                if (string.Equals(databaseType, "mono", StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine("Running in Kubernetes mono environment - using PostgreSQL mono database");
+                    return new DatabasePostgresMono();
+                }
+                else
+                {
+                    Console.WriteLine("Running in Kubernetes sharded environment - using PostgreSQL sharded database");
+                    return new DatabasePostgres();
+                }
             }
             
             // Interactive mode for local development

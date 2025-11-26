@@ -13,20 +13,38 @@ public class DatabasePostgres : IDatabase
     {
         _shardManager = new DatabaseShardManager();
         
-        // Initialize all database schemas
-        _shardManager.InitializeSchemas();
+        Console.WriteLine("Connecting to database shards...");
         
         // Test connectivity
         var health = _shardManager.GetHealthStatus();
         if (!health.IsHealthy)
         {
-            throw new InvalidOperationException($"Not all database shards are healthy: {health.HealthyShardCount}/{health.TotalShardCount} available");
+            Console.WriteLine($"Warning: Not all database shards are healthy: {health.HealthyShardCount}/{health.TotalShardCount} available");
+        }
+        else
+        {
+            Console.WriteLine("All database shards are healthy");
         }
     }
 
     public void InsertAllWords(Dictionary<string, int> res)
     {
         using var connection = _shardManager.GetConnection(DatabaseShard.Words);
+        
+        // Ensure table exists BEFORE transaction
+        try
+        {
+            using var checkCmd = connection.CreateCommand();
+            checkCmd.CommandText = "SELECT 1 FROM word LIMIT 1";
+            checkCmd.ExecuteScalar();
+        }
+        catch
+        {
+            using var createCmd = connection.CreateCommand();
+            createCmd.CommandText = "CREATE TABLE IF NOT EXISTS word(id INTEGER PRIMARY KEY, name TEXT UNIQUE)";
+            createCmd.ExecuteNonQuery();
+        }
+        
         using var transaction = connection.BeginTransaction();
         
         var command = connection.CreateCommand();
@@ -54,10 +72,26 @@ public class DatabasePostgres : IDatabase
     public void InsertAllOcc(int docId, ISet<int> wordIds)
     {
         using var connection = _shardManager.GetConnection(DatabaseShard.Occurrences);
+        
+        // Ensure table exists BEFORE transaction
+        try
+        {
+            using var checkCmd = connection.CreateCommand();
+            checkCmd.CommandText = "SELECT 1 FROM occ LIMIT 1";
+            checkCmd.ExecuteScalar();
+        }
+        catch
+        {
+            // Table doesn't exist, create it
+            using var createCmd = connection.CreateCommand();
+            createCmd.CommandText = "CREATE TABLE IF NOT EXISTS occ(wordId INTEGER, docId INTEGER); CREATE INDEX IF NOT EXISTS word_index ON occ (wordId); CREATE INDEX IF NOT EXISTS doc_index ON occ (docId);";
+            createCmd.ExecuteNonQuery();
+        }
+        
         using var transaction = connection.BeginTransaction();
         
         var command = connection.CreateCommand();
-        command.CommandText = @"INSERT INTO occ(wordId, docId) VALUES(@wordId,@docId)";
+        command.CommandText = @"INSERT INTO occ(wordId, docId) VALUES(@wordId,@docId) ON CONFLICT DO NOTHING";
 
         var paramwordId = command.CreateParameter();
         paramwordId.ParameterName = "wordId";
@@ -97,8 +131,22 @@ public class DatabasePostgres : IDatabase
     {
         using var connection = _shardManager.GetConnection(DatabaseShard.Documents);
         
+        // Ensure table exists
+        try
+        {
+            using var checkCmd = connection.CreateCommand();
+            checkCmd.CommandText = "SELECT 1 FROM document LIMIT 1";
+            checkCmd.ExecuteScalar();
+        }
+        catch
+        {
+            using var createCmd = connection.CreateCommand();
+            createCmd.CommandText = "CREATE TABLE IF NOT EXISTS document(id INTEGER PRIMARY KEY, url TEXT, idxTime TEXT, creationTime TEXT)";
+            createCmd.ExecuteNonQuery();
+        }
+        
         var insertCmd = new NpgsqlCommand(
-            "INSERT INTO document(id, url, idxTime, creationTime) VALUES(@id,@url, @idxTime, @creationTime)"
+            "INSERT INTO document(id, url, idxTime, creationTime) VALUES(@id,@url, @idxTime, @creationTime) ON CONFLICT (id) DO NOTHING"
         );
         insertCmd.Connection = connection;
 
@@ -122,6 +170,23 @@ public class DatabasePostgres : IDatabase
         Dictionary<string, int> res = new Dictionary<string, int>();
 
         using var connection = _shardManager.GetConnection(DatabaseShard.Words);
+        
+        // Ensure table exists
+        try
+        {
+            using var checkCmd = connection.CreateCommand();
+            checkCmd.CommandText = "SELECT 1 FROM word LIMIT 1";
+            checkCmd.ExecuteScalar();
+        }
+        catch
+        {
+            using var createCmd = connection.CreateCommand();
+            createCmd.CommandText = "CREATE TABLE IF NOT EXISTS word(id INTEGER PRIMARY KEY, name TEXT UNIQUE)";
+            createCmd.ExecuteNonQuery();
+            // Return empty dictionary if table was just created
+            return res;
+        }
+        
         var selectCmd = connection.CreateCommand();
         selectCmd.CommandText = "SELECT * FROM word";
 

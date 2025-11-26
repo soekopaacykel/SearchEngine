@@ -30,21 +30,6 @@ public class DatabasePostgres : IDatabase
     public void InsertAllWords(Dictionary<string, int> res)
     {
         using var connection = _shardManager.GetConnection(DatabaseShard.Words);
-        
-        // Ensure table exists BEFORE transaction
-        try
-        {
-            using var checkCmd = connection.CreateCommand();
-            checkCmd.CommandText = "SELECT 1 FROM word LIMIT 1";
-            checkCmd.ExecuteScalar();
-        }
-        catch
-        {
-            using var createCmd = connection.CreateCommand();
-            createCmd.CommandText = "CREATE TABLE IF NOT EXISTS word(id INTEGER PRIMARY KEY, name TEXT UNIQUE)";
-            createCmd.ExecuteNonQuery();
-        }
-        
         using var transaction = connection.BeginTransaction();
         
         var command = connection.CreateCommand();
@@ -72,22 +57,6 @@ public class DatabasePostgres : IDatabase
     public void InsertAllOcc(int docId, ISet<int> wordIds)
     {
         using var connection = _shardManager.GetConnection(DatabaseShard.Occurrences);
-        
-        // Ensure table exists BEFORE transaction
-        try
-        {
-            using var checkCmd = connection.CreateCommand();
-            checkCmd.CommandText = "SELECT 1 FROM occ LIMIT 1";
-            checkCmd.ExecuteScalar();
-        }
-        catch
-        {
-            // Table doesn't exist, create it
-            using var createCmd = connection.CreateCommand();
-            createCmd.CommandText = "CREATE TABLE IF NOT EXISTS occ(wordId INTEGER, docId INTEGER); CREATE INDEX IF NOT EXISTS word_index ON occ (wordId); CREATE INDEX IF NOT EXISTS doc_index ON occ (docId);";
-            createCmd.ExecuteNonQuery();
-        }
-        
         using var transaction = connection.BeginTransaction();
         
         var command = connection.CreateCommand();

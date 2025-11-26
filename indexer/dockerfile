@@ -1,0 +1,21 @@
+# Indexer Dockerfile
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+
+# Copy solution and project files
+COPY SearchEngine.sln ./
+COPY Core/Core.csproj Core/
+COPY indexer/indexer.csproj indexer/
+RUN dotnet restore indexer/indexer.csproj
+
+# Copy source code
+COPY Core/ Core/
+COPY indexer/ indexer/
+
+# Build and publish
+RUN dotnet publish indexer/indexer.csproj -c Release -o /app/publish
+
+FROM mcr.microsoft.com/dotnet/runtime:9.0 AS final
+WORKDIR /app
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "indexer.dll"]

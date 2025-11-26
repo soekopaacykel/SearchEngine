@@ -88,6 +88,12 @@ kind: Service
 metadata:
   name: searchapi
   namespace: searchengine
+  labels:
+    app: searchapi
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "/metrics"
+    prometheus.io/port: "8080"
 spec:
   selector:
     app: searchapi
@@ -138,3 +144,26 @@ spec:
     targetPort: 8080
     nodePort: 30080
   type: NodePort
+
+---
+# ServiceMonitor for Prometheus Operator (kube-prometheus-stack)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: searchapi-servicemonitor
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: searchapi
+  namespaceSelector:
+    matchNames:
+      - searchengine
+  endpoints:
+    - port: http
+      path: /metrics
+      scheme: http
+      interval: 15s
+      scrapeTimeout: 10s

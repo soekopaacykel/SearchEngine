@@ -1,5 +1,6 @@
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Logs;
+using OpenTelemetry.Resources;
 
 namespace SearchAPI;
 
@@ -15,11 +16,22 @@ public class Program
         builder.Services.AddOpenApi();
 
         // Add OpenTelemetry metrics and logging
+        var serviceVersion = typeof(Program).Assembly.GetName().Version?.ToString() ?? "unknown";
         builder.Services.AddOpenTelemetry()
+            .ConfigureResource(resource =>
+                resource.AddService(serviceName: "SearchAPI", serviceVersion: serviceVersion))
             .WithMetrics(metricsBuilder =>
             {
                 metricsBuilder
                     .AddMeter("SearchAPI.Metrics")
+                    // Ensure Prometheus-compatible histogram buckets for our custom latency metric
+                    .AddView(
+                        instrumentName: "search_latency_ms",
+                        new ExplicitBucketHistogramConfiguration
+                        {
+                            Boundaries = new double[] { 1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000 }
+                        }
+                    )
                     .AddAspNetCoreInstrumentation()
                     .AddPrometheusExporter();
             });

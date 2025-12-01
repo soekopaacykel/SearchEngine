@@ -367,13 +367,22 @@ spec:
     spec:
       containers:
       - name: searchapi
-        image: cbjoedstrup/searchapi:latest
+        image: cbjoedstrup/searchapi:1.1.9
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
         env:
         - name: ASPNETCORE_URLS
           value: "http://+:8080"
+        # Ensure the API runs in sharded DB mode and labels metrics accordingly
+        - name: DATABASE_MODE
+          value: "y-sharded"
+        - name: SHARDS_X
+          value: "1"
+        - name: SHARDS_Y
+          value: "3"
+        - name: METRICS_USER_LABEL
+          value: "true"
 ---
 # SearchAPI Service
 apiVersion: v1
@@ -458,8 +467,17 @@ spec:
         env:
         - name: DOTNET_ENVIRONMENT
           value: "Production"
+        # Use the mounted path directly so the indexer can see your files
         - name: INDEX_PATH
-          value: "/app/data/large"
+          value: "/app/data"
+        # Explicitly select sharded mode inside Kubernetes
+        - name: DATABASE_TYPE
+          value: "sharded"
+        # Provide namespace for auto-detection/logging (Downward API)
+        - name: KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         volumeMounts:
         - name: data-volume
           mountPath: /app/data
@@ -527,7 +545,7 @@ data:
       url: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
       editable: true
 ---
-# Minimal ASP.NET Core dashboard example (works with Prometheus Operator labels)
+# Grafana dashboard (Health, Scrape & Latency)
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -544,11 +562,11 @@ data:
         { "type": "panel", "id": "timeseries", "name": "Time series", "version": "10.0.0" },
         { "type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0" }
       ],
-      "title": "SearchAPI - Health & Scrape",
+      "title": "SearchAPI(sharded) - Health, Scrape & Latency",
       "uid": "searchapi-health",
       "timezone": "browser",
       "schemaVersion": 38,
-      "version": 1,
+      "version": 3,
       "refresh": "10s",
       "panels": [
         {
@@ -563,7 +581,7 @@ data:
           },
           "targets": [
             {
-              "expr": "max(up{namespace=\"searchengine\", service=\"searchapi\"})",
+              "expr": "max(up{service=\"searchapi\"})",
               "legendFormat": "up",
               "refId": "A"
             }
@@ -599,6 +617,77 @@ data:
               "legendFormat": "{{job}}",
               "refId": "A"
             }
+          ],
+          "datasource": { "type": "prometheus", "uid": "Prometheus" }
+        },
+        {
+          "type": "timeseries",
+          "title": "Latency p50/p95/p99 (ms)",
+          "id": 10,
+          "gridPos": { "h": 9, "w": 24, "x": 0, "y": 14 },
+          "fieldConfig": { "defaults": { "unit": "ms" } },
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+          "targets": [
+            { "refId": "A", "expr": "histogram_quantile(0.50, sum by (le) (rate(search_latency_ms_milliseconds_bucket[5m])))", "legendFormat": "p50" },
+            { "refId": "B", "expr": "histogram_quantile(0.95, sum by (le) (rate(search_latency_ms_milliseconds_bucket[5m])))", "legendFormat": "p95" },
+            { "refId": "C", "expr": "histogram_quantile(0.99, sum by (le) (rate(search_latency_ms_milliseconds_bucket[5m])))", "legendFormat": "p99" }
+          ],
+          "datasource": { "type": "prometheus", "uid": "Prometheus" }
+        },
+        {
+          "type": "table",
+          "title": "Top users by p95 latency (last 15m)",
+          "id": 11,
+          "gridPos": { "h": 10, "w": 12, "x": 0, "y": 23 },
+          "options": { "showHeader": true },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "topk(10, histogram_quantile(0.95, sum by (user_id, le) (rate(search_latency_ms_milliseconds_bucket[5m]))))",
+              "legendFormat": "{{user_id}}"
+            }
+          ],
+          "transformations": [ { "id": "labelsToFields", "options": { "mode": "columns" } } ],
+          "datasource": { "type": "prometheus", "uid": "Prometheus" }
+        },
+        {
+          "type": "timeseries",
+          "title": "Requests per second",
+          "id": 12,
+          "gridPos": { "h": 10, "w": 12, "x": 12, "y": 23 },
+          "fieldConfig": { "defaults": { "unit": "req/s" } },
+          "targets": [
+            { "refId": "A", "expr": "sum(rate(search_requests_total_count_total[5m])) or vector(0)", "legendFormat": "rps" }
+          ],
+          "datasource": { "type": "prometheus", "uid": "Prometheus" }
+        },
+        {
+          "type": "timeseries",
+          "title": "Error rate",
+          "id": 13,
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 33 },
+          "fieldConfig": { "defaults": { "unit": "req/s" } },
+          "targets": [
+            { "refId": "A", "expr": "sum(rate(search_errors_total_count_total[5m])) or vector(0)", "legendFormat": "errors/s" }
+          ],
+          "datasource": { "type": "prometheus", "uid": "Prometheus" }
+        },
+        {
+          "type": "table",
+          "title": "Recent searches (~last 100)",
+          "id": 14,
+          "gridPos": { "h": 10, "w": 24, "x": 0, "y": 41 },
+          "options": { "showHeader": true },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "{__name__=~\"search_recent_ms_.*_milliseconds\"}",
+              "legendFormat": "{{__name__}}"
+            }
+          ],
+          "transformations": [
+            { "id": "reduce", "options": { "reducers": ["lastNotNull"], "includeTimeField": false } },
+            { "id": "labelsToFields", "options": { "mode": "columns" } }
           ],
           "datasource": { "type": "prometheus", "uid": "Prometheus" }
         }

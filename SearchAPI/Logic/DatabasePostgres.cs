@@ -8,17 +8,39 @@ using Npgsql;
 public class DatabasePostgres : IDatabase
 {
     private readonly DatabaseShardManager _shardManager;
+    private readonly Func<DatabaseShard, NpgsqlConnection> _getConnection;
+    private readonly bool _monoMode;
     private Dictionary<string, int>? mWords = null;
 
     public DatabasePostgres()
     {
         _shardManager = new DatabaseShardManager();
-        
-        // Test connectivity to all shards
-        var health = _shardManager.GetHealthStatus();
-        if (!health.IsHealthy)
+
+        // Detect mono mode WITHOUT touching Core
+        var mode = Environment.GetEnvironmentVariable("DATABASE_MODE") ?? string.Empty; // monolith|x-sharded|y-sharded
+        var shardsX = Environment.GetEnvironmentVariable("SHARDS_X") ?? "0";
+        var shardsY = Environment.GetEnvironmentVariable("SHARDS_Y") ?? "0";
+        _monoMode = string.Equals(mode, "monolith", StringComparison.OrdinalIgnoreCase)
+                    || (shardsX == "0" && shardsY == "0");
+
+        if (_monoMode)
         {
-            throw new InvalidOperationException($"Not all database shards are healthy: {health.HealthyShardCount}/{health.TotalShardCount} available");
+            // Route all logical shards to the single legacy connection string
+            _getConnection = _ =>
+            {
+                var c = new NpgsqlConnection(Paths.POSTGRES_DATABASE);
+                c.Open();
+                return c;
+            };
+            // Do NOT check connectivity in constructor — defer to first use so the app can start
+            // even if the database is still coming up. Failures will surface on query execution
+            // and be handled by the caller (controller) with appropriate HTTP status and metrics.
+        }
+        else
+        {
+            // Sharded path: configure connection factory; avoid failing constructor on transient shard issues.
+            _getConnection = shard => _shardManager.GetConnection(shard);
+            // Health will be implicitly validated when connections are requested by methods.
         }
     }
 
@@ -41,7 +63,7 @@ public class DatabasePostgres : IDatabase
         sql += "wordId in " + AsString(wordIds) + " GROUP BY docId ";
         sql += "ORDER BY count DESC;";
 
-        using var connection = _shardManager.GetConnection(DatabaseShard.Occurrences);
+        using var connection = _getConnection(DatabaseShard.Occurrences);
         var selectCmd = connection.CreateCommand();
         selectCmd.CommandText = sql;
 
@@ -65,7 +87,7 @@ public class DatabasePostgres : IDatabase
 
         try
         {
-            using var connection = _shardManager.GetConnection(DatabaseShard.Words);
+            using var connection = _getConnection(DatabaseShard.Words);
             var selectCmd = connection.CreateCommand();
             selectCmd.CommandText = "SELECT * FROM word";
 
@@ -91,7 +113,7 @@ public class DatabasePostgres : IDatabase
 
     public BEDocument? GetDocDetails(int docId)
     {
-        using var connection = _shardManager.GetConnection(DatabaseShard.Documents);
+        using var connection = _getConnection(DatabaseShard.Documents);
         var selectCmd = connection.CreateCommand();
         selectCmd.CommandText = $"SELECT * FROM document where id = {docId}";
 
@@ -117,7 +139,7 @@ public class DatabasePostgres : IDatabase
         sql += "wordId in " + AsString(wordIds) + " AND docId = " + docId;
         sql += " ORDER BY wordId;";
 
-        using var connection = _shardManager.GetConnection(DatabaseShard.Occurrences);
+        using var connection = _getConnection(DatabaseShard.Occurrences);
         var selectCmd = connection.CreateCommand();
         selectCmd.CommandText = sql;
 
@@ -147,7 +169,7 @@ public class DatabasePostgres : IDatabase
         var sql = "SELECT name FROM word where ";
         sql += "id in " + AsString(wordIds);
 
-        using var connection = _shardManager.GetConnection(DatabaseShard.Words);
+        using var connection = _getConnection(DatabaseShard.Words);
         var selectCmd = connection.CreateCommand();
         selectCmd.CommandText = sql;
         

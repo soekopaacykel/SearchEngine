@@ -422,7 +422,7 @@ spec:
     spec:
       containers:
       - name: searchweb
-        image: cbjoedstrup/searchweb:latest
+        image: soekopaacykel/searchweb:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080

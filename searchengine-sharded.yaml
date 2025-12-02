@@ -367,7 +367,9 @@ spec:
     spec:
       containers:
       - name: searchapi
-        image: cbjoedstrup/searchapi:1.1.9
+        # Original image: cbjoedstrup/searchapi:1.1.9 
+        # Updated image: cbjoedstrup/searchapi:1.2.0 should work for ARM64
+        image: cbjoedstrup/searchapi:1.2.0
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080

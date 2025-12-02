@@ -1,25 +1,43 @@
 # SearchAPI Dockerfile
-# Build
+
+### BUILD STAGE ###
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+
+# Fix QEMU ARM64 crashes
+RUN apt-get update && apt-get install -y libicu-dev
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+
 WORKDIR /src
 
-# Copy solution and project files
+# Copy solution & csproj files
 COPY SearchEngine.sln ./
 COPY Core/Core.csproj Core/
 COPY SearchAPI/SearchAPI.csproj SearchAPI/
+
 RUN dotnet restore SearchAPI/SearchAPI.csproj
 
-# Copy source code
+# Copy rest of source code
 COPY Core/ Core/
 COPY SearchAPI/ SearchAPI/
 
-# Build and publish
-RUN dotnet publish SearchAPI/SearchAPI.csproj -c Release -o /app/publish
+# Publish (with invariant globalization for ARM)
+RUN dotnet publish SearchAPI/SearchAPI.csproj \
+    -c Release \
+    -o /app/publish \
+    /p:InvariantGlobalization=true
 
-# Runtime
+
+### RUNTIME STAGE ###
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
+
+# Fix runtime globalization for ARM
+RUN apt-get update && apt-get install -y libicu-dev
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+
 WORKDIR /app
 EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
+
 COPY --from=build /app/publish .
+
 ENTRYPOINT ["dotnet", "SearchAPI.dll"]

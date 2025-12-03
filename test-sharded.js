@@ -13,10 +13,9 @@ const searchTerms = [
 
 // 'options' definerer din test-profil
 export const options = {
-  // 'stages' lader dig rampe load op og ned.
-  // Dette eksempel er simpelt: 10 brugere i 5 minutter.
-  vus: 25000,           // 10 virtuelle brugere (samtidige forbindelser)
-  duration: '20m',    // Kør testen i 5 minutter
+  // High load test  
+  vus: 25,           // 25000 virtuelle brugere (samtidige forbindelser)
+  duration: '2m',    // Kør testen i 20 minutter
 };
 
 // Dette er den funktion, hver virtuel bruger kører igen og igen
@@ -25,8 +24,8 @@ export default function () {
   // 1. Vælg et tilfældigt søgeord
   const term = searchTerms[Math.floor(Math.random() * searchTerms.length)];
   
-  // 2. Erstat med din Minikube Service URL
-  const url = `http://127.0.0.1:51519/search?q=${term}`;
+  // 2. Use port-forwarded SearchWeb for sharded namespace
+  const url = `http://127.0.0.1:8080/?SearchQuery=${encodeURIComponent(term)}&MaxResults=10`;
 
   // 3. Send HTTP GET request
   const res = http.get(url);

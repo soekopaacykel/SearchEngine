@@ -13,23 +13,23 @@ metadata:
   namespace: searchengine
 data:
   init-words.sql: |
-    CREATE DATABASE search_words;
+    SELECT 'CREATE DATABASE search_words' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'search_words')\gexec
     \c search_words;
-    CREATE TABLE word(id INTEGER PRIMARY KEY, name TEXT UNIQUE);
-    CREATE INDEX word_name_index ON word (name);
+    CREATE TABLE IF NOT EXISTS word(id INTEGER PRIMARY KEY, name TEXT UNIQUE);
+    CREATE INDEX IF NOT EXISTS word_name_index ON word (name);
     
   init-documents.sql: |
-    CREATE DATABASE search_documents;
+    SELECT 'CREATE DATABASE search_documents' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'search_documents')\gexec
     \c search_documents;
-    CREATE TABLE document(id INTEGER PRIMARY KEY, url TEXT, idxTime TEXT, creationTime TEXT);
-    CREATE INDEX document_url_index ON document (url);
+    CREATE TABLE IF NOT EXISTS document(id INTEGER PRIMARY KEY, url TEXT, idxTime TEXT, creationTime TEXT);
+    CREATE INDEX IF NOT EXISTS document_url_index ON document (url);
     
   init-occurrences.sql: |
-    CREATE DATABASE search_occurrences;
+    SELECT 'CREATE DATABASE search_occurrences' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'search_occurrences')\gexec
     \c search_occurrences;
-    CREATE TABLE occ(wordId INTEGER, docId INTEGER);
-    CREATE INDEX word_index ON occ (wordId);
-    CREATE INDEX doc_index ON occ (docId);
+    CREATE TABLE IF NOT EXISTS occ(wordId INTEGER, docId INTEGER);
+    CREATE INDEX IF NOT EXISTS word_index ON occ (wordId);
+    CREATE INDEX IF NOT EXISTS doc_index ON occ (docId);
 ---
 # PostgreSQL Words Persistent Volume
 apiVersion: v1
@@ -471,7 +471,7 @@ spec:
           value: "Production"
         # Use the mounted path directly so the indexer can see your files
         - name: INDEX_PATH
-          value: "/app/data"
+          value: "/data/medium"
         # Explicitly select sharded mode inside Kubernetes
         - name: DATABASE_TYPE
           value: "sharded"
@@ -482,7 +482,7 @@ spec:
               fieldPath: metadata.namespace
         volumeMounts:
         - name: data-volume
-          mountPath: /app/data
+          mountPath: /data/medium
         command: ["/bin/sh"]
         args: 
           - -c
